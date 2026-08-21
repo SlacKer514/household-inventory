@@ -1,0 +1,480 @@
+const STORAGE_KEY = "kitchenInventoryV1";
+const SHOPPING_KEY = "kitchenShoppingV1";
+const ACTIVITY_KEY = "kitchenActivityV1";
+
+let inventory = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+let shopping = JSON.parse(localStorage.getItem(SHOPPING_KEY) || "[]");
+let activity = JSON.parse(localStorage.getItem(ACTIVITY_KEY) || "[]");
+
+let mode = "add";
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory));
+  localStorage.setItem(SHOPPING_KEY, JSON.stringify(shopping));
+  localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activity));
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(screen => {
+    screen.classList.remove("active");
+  });
+
+  const screen = document.getElementById(id);
+
+  if (screen) {
+    screen.classList.add("active");
+  }
+
+  document.querySelectorAll(".bottom-nav button").forEach(button => {
+    button.classList.toggle(
+      "active",
+      button.dataset.screen === id
+    );
+  });
+
+  if (id === "home") renderHome();
+  if (id === "inventory") renderInventory();
+  if (id === "shopping") renderShopping();
+}
+
+function setMode(newMode) {
+  mode = newMode;
+
+  const add = document.getElementById("addMode");
+  const remove = document.getElementById("removeMode");
+
+  add.className = newMode === "add" ? "selected-add" : "";
+  remove.className = newMode === "remove" ? "selected-remove" : "";
+}
+
+function processBarcode() {
+  const input = document.getElementById("barcodeInput");
+  const barcode = input.value.trim();
+
+  if (!barcode) {
+    alert("Please enter or scan a barcode.");
+    return;
+  }
+
+  let product = inventory.find(item => item.barcode === barcode);
+
+  if (!product) {
+    const name = prompt(
+      "This barcode is not in your inventory.\n\nEnter the product name:"
+    );
+
+    if (!name) return;
+
+    const category = prompt(
+      "Enter a category:",
+      "Other"
+    ) || "Other";
+
+    const minimum = Number(
+      prompt("Minimum stock level:", "1")
+    ) || 0;
+
+    product = {
+      id: crypto.randomUUID(),
+      barcode,
+      name,
+      category,
+      quantity: 0,
+      minimum
+    };
+
+    inventory.push(product);
+  }
+
+  if (mode === "add") {
+    product.quantity += 1;
+    logActivity(`Added ${product.name}`);
+  } else {
+    if (product.quantity > 0) {
+      product.quantity -= 1;
+      logActivity(`Removed ${product.name}`);
+    } else {
+      alert(`${product.name} is already at 0.`);
+    }
+  }
+
+  save();
+
+  input.value = "";
+
+  renderHome();
+  renderInventory();
+
+  alert(
+    `${product.name}\n\nCurrent quantity: ${product.quantity}`
+  );
+}
+
+function openAddProduct() {
+  document.getElementById("newName").value = "";
+  document.getElementById("newBarcode").value = "";
+  document.getElementById("newQuantity").value = 1;
+  document.getElementById("newMinimum").value = 1;
+
+  showScreen("addProduct");
+}
+
+function saveNewProduct() {
+  const name = document.getElementById("newName").value.trim();
+
+  if (!name) {
+    alert("Enter a product name.");
+    return;
+  }
+
+  const barcode = document.getElementById("newBarcode").value.trim();
+  const category = document.getElementById("newCategory").value;
+  const quantity = Number(
+    document.getElementById("newQuantity").value
+  ) || 0;
+
+  const minimum = Number(
+    document.getElementById("newMinimum").value
+  ) || 0;
+
+  const existing = barcode
+    ? inventory.find(item => item.barcode === barcode)
+    : null;
+
+  if (existing) {
+    existing.quantity += quantity;
+    existing.minimum = minimum;
+    logActivity(`Added ${quantity} ${existing.name}`);
+  } else {
+    inventory.push({
+      id: crypto.randomUUID(),
+      barcode,
+      name,
+      category,
+      quantity,
+      minimum
+    });
+
+    logActivity(`Added ${quantity} ${name}`);
+  }
+
+  save();
+
+  alert(`${name} added to inventory.`);
+
+  showScreen("inventory");
+}
+
+function changeQuantity(id, amount) {
+  const product = inventory.find(item => item.id === id);
+
+  if (!product) return;
+
+  product.quantity = Math.max(
+    0,
+    product.quantity + amount
+  );
+
+  logActivity(
+    `${amount > 0 ? "Added" : "Removed"} ${product.name}`
+  );
+
+  save();
+  renderHome();
+  renderInventory();
+}
+
+function deleteProduct(id) {
+  const product = inventory.find(item => item.id === id);
+
+  if (!product) return;
+
+  if (!confirm(`Delete ${product.name} from inventory?`)) {
+    return;
+  }
+
+  inventory = inventory.filter(item => item.id !== id);
+
+  save();
+  renderInventory();
+  renderHome();
+}
+
+function renderHome() {
+  const total = inventory.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
+
+  const low = inventory.filter(
+    item => item.quantity <= item.minimum
+  ).length;
+
+  document.getElementById("totalItems").textContent = total;
+  document.getElementById("lowItems").textContent = low;
+
+  const recent = document.getElementById("recentActivity");
+
+  if (!activity.length) {
+    recent.innerHTML =
+      `<div class="empty">No activity yet.</div>`;
+    return;
+  }
+
+  recent.innerHTML = activity
+    .slice(0, 8)
+    .map(item => `<p>${escapeHTML(item)}</p>`)
+    .join("");
+}
+
+function renderInventory() {
+  const list = document.getElementById("inventoryList");
+  const search = (
+    document.getElementById("searchInput")?.value || ""
+  ).toLowerCase();
+
+  const category =
+    document.getElementById("categoryFilter")?.value || "all";
+
+  updateCategoryFilter();
+
+  const filtered = inventory.filter(item => {
+    const matchesSearch =
+      item.name.toLowerCase().includes(search);
+
+    const matchesCategory =
+      category === "all" ||
+      item.category === category;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  if (!filtered.length) {
+    list.innerHTML =
+      `<div class="empty">No products found.</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(item => {
+
+    const isLow =
+      item.quantity <= item.minimum;
+
+    return `
+      <div class="product">
+
+        <div style="flex:1">
+          <div class="product-name">
+            ${escapeHTML(item.name)}
+          </div>
+
+          <div class="product-meta">
+            ${escapeHTML(item.category)}
+            ${isLow ? ' • <span class="low">LOW</span>' : ''}
+          </div>
+        </div>
+
+        <div class="qty-buttons">
+
+          <button
+            class="secondary"
+            onclick="changeQuantity('${item.id}', -1)">
+            −
+          </button>
+
+          <div class="quantity">
+            ${item.quantity}
+          </div>
+
+          <button
+            class="primary"
+            onclick="changeQuantity('${item.id}', 1)">
+            +
+          </button>
+
+          <button
+            class="secondary"
+            onclick="deleteProduct('${item.id}')">
+            🗑
+          </button>
+
+        </div>
+
+      </div>
+    `;
+  }).join("");
+}
+
+function updateCategoryFilter() {
+  const select =
+    document.getElementById("categoryFilter");
+
+  const current = select.value;
+
+  const categories = [
+    ...new Set(
+      inventory.map(item => item.category)
+    )
+  ].sort();
+
+  select.innerHTML =
+    `<option value="all">All Categories</option>` +
+    categories
+      .map(
+        category =>
+          `<option value="${escapeHTML(category)}">
+            ${escapeHTML(category)}
+          </option>`
+      )
+      .join("");
+
+  if (
+    categories.includes(current)
+  ) {
+    select.value = current;
+  }
+}
+
+function addShoppingItem() {
+  const input =
+    document.getElementById("shoppingInput");
+
+  const name = input.value.trim();
+
+  if (!name) return;
+
+  shopping.push({
+    id: crypto.randomUUID(),
+    name,
+    completed: false
+  });
+
+  input.value = "";
+
+  save();
+  renderShopping();
+}
+
+function addLowStockToShopping() {
+  const lowStock = inventory.filter(
+    item => item.quantity <= item.minimum
+  );
+
+  lowStock.forEach(item => {
+
+    const exists = shopping.some(
+      shop =>
+        shop.name.toLowerCase() ===
+        item.name.toLowerCase() &&
+        !shop.completed
+    );
+
+    if (!exists) {
+      shopping.push({
+        id: crypto.randomUUID(),
+        name: item.name,
+        completed: false
+      });
+    }
+  });
+
+  save();
+  renderShopping();
+
+  alert("Low-stock items added to shopping list.");
+}
+
+function toggleShopping(id) {
+  const item =
+    shopping.find(item => item.id === id);
+
+  if (!item) return;
+
+  item.completed = !item.completed;
+
+  save();
+  renderShopping();
+}
+
+function removeShopping(id) {
+  shopping =
+    shopping.filter(item => item.id !== id);
+
+  save();
+  renderShopping();
+}
+
+function renderShopping() {
+  const list =
+    document.getElementById("shoppingList");
+
+  if (!shopping.length) {
+    list.innerHTML =
+      `<div class="empty">Shopping list is empty.</div>`;
+    return;
+  }
+
+  list.innerHTML = shopping.map(item => `
+    <div class="shopping-item">
+
+      <input
+        type="checkbox"
+        ${item.completed ? "checked" : ""}
+        onchange="toggleShopping('${item.id}')"
+      >
+
+      <div style="flex:1;
+        ${item.completed
+          ? "text-decoration:line-through;color:#888"
+          : ""}">
+        ${escapeHTML(item.name)}
+      </div>
+
+      <button
+        class="secondary"
+        onclick="removeShopping('${item.id}')">
+        ✕
+      </button>
+
+    </div>
+  `).join("");
+}
+
+function logActivity(message) {
+  const time =
+    new Date().toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit"
+    });
+
+  activity.unshift(`${time} — ${message}`);
+
+  activity =
+    activity.slice(0, 30);
+}
+
+function escapeHTML(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register(
+      "service-worker.js"
+    ).catch(error => {
+      console.log(
+        "Service worker registration failed:",
+        error
+      );
+    });
+  });
+}
+
+renderHome();
+renderInventory();
+renderShopping();
