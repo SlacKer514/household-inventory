@@ -1,19 +1,61 @@
+ChatGPT said:
+
+Yes. Let's make this much simpler. Replace the entire contents of your current index.html with the code below.
+
+This version already includes the camera scanner, so you won't need to search for the old scanner section.
+Step 1 — Replace index.html
+
+In GitHub:
+
+    Open index.html.
+    Click the pencil/edit icon.
+    Select all of the existing code and delete it.
+    Paste everything below.
+    Scroll down and click Commit changes.
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#2e7d32">
-  <meta name="description" content="Household kitchen inventory and grocery tracker">
-  <link rel="manifest" href="manifest.json">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#2e7d32"
+  >
+
+  <meta
+    name="description"
+    content="Household grocery and kitchen inventory tracker"
+  >
+
+  <link
+    rel="manifest"
+    href="manifest.json"
+  >
+
   <title>Kitchen Inventory</title>
 
   <style>
-    * { box-sizing: border-box; }
+
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
       background: #f5f7f5;
       color: #1d261d;
     }
@@ -21,7 +63,7 @@
     header {
       background: #2e7d32;
       color: white;
-      padding: 22px 18px;
+      padding: 20px;
       position: sticky;
       top: 0;
       z-index: 10;
@@ -29,7 +71,7 @@
 
     header h1 {
       margin: 0;
-      font-size: 24px;
+      font-size: 23px;
     }
 
     header p {
@@ -45,8 +87,13 @@
       padding-bottom: 100px;
     }
 
-    .screen { display: none; }
-    .screen.active { display: block; }
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
 
     .stats {
       display: grid;
@@ -59,7 +106,8 @@
       background: white;
       border-radius: 16px;
       padding: 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      box-shadow:
+        0 2px 8px rgba(0,0,0,.06);
     }
 
     .stat-number {
@@ -108,15 +156,20 @@
       border-radius: 16px;
       padding: 18px;
       margin-bottom: 14px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+
+      box-shadow:
+        0 2px 8px rgba(0,0,0,.06);
     }
 
-    input, select {
+    input,
+    select {
       width: 100%;
       padding: 13px;
       margin: 6px 0 12px;
+
       border: 1px solid #ccd4cc;
       border-radius: 10px;
+
       font-size: 16px;
       background: white;
     }
@@ -133,14 +186,27 @@
       margin-bottom: 14px;
     }
 
-    .mode button.selected-add {
+    .selected-add {
       background: #2e7d32;
       color: white;
     }
 
-    .mode button.selected-remove {
+    .selected-remove {
       background: #c62828;
       color: white;
+    }
+
+    #reader {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 14px;
+      margin-bottom: 14px;
+      background: #111;
+    }
+
+    #reader video {
+      width: 100% !important;
+      border-radius: 14px;
     }
 
     .product {
@@ -148,8 +214,11 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+
       padding: 14px 0;
-      border-bottom: 1px solid #edf0ed;
+
+      border-bottom:
+        1px solid #edf0ed;
     }
 
     .product:last-child {
@@ -200,11 +269,16 @@
       bottom: 0;
       left: 0;
       right: 0;
+
       height: 70px;
+
       background: white;
       border-top: 1px solid #ddd;
+
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns:
+        repeat(4, 1fr);
+
       z-index: 20;
     }
 
@@ -212,7 +286,9 @@
       background: white;
       color: #586158;
       border-radius: 0;
+
       padding: 8px 2px;
+
       font-size: 12px;
     }
 
@@ -229,8 +305,11 @@
       display: flex;
       align-items: center;
       gap: 10px;
+
       padding: 12px 0;
-      border-bottom: 1px solid #eee;
+
+      border-bottom:
+        1px solid #eee;
     }
 
     .shopping-item input[type="checkbox"] {
@@ -242,100 +321,279 @@
     .hidden {
       display: none !important;
     }
+
+    .scan-status {
+      text-align: center;
+      padding: 12px;
+
+      color: #687268;
+
+      font-size: 14px;
+    }
+
+    .instructions {
+      background: #f0f5f0;
+      border-radius: 12px;
+
+      padding: 12px;
+
+      margin-top: 12px;
+
+      font-size: 14px;
+    }
+
   </style>
+
 </head>
+
 
 <body>
 
+
 <header>
-  <h1>🥫 Kitchen Inventory</h1>
-  <p>Know what you have. Know what you need.</p>
+
+  <h1>
+    🥫 Kitchen Inventory
+  </h1>
+
+  <p>
+    Know what you have. Know what you need.
+  </p>
+
 </header>
+
 
 <main>
 
+
   <!-- HOME -->
-  <section id="home" class="screen active">
+
+  <section
+    id="home"
+    class="screen active"
+  >
 
     <div class="stats">
-      <div class="stat">
-        <div id="totalItems" class="stat-number">0</div>
-        <div class="stat-label">Items in stock</div>
-      </div>
 
       <div class="stat">
-        <div id="lowItems" class="stat-number">0</div>
-        <div class="stat-label">Low stock</div>
+
+        <div
+          id="totalItems"
+          class="stat-number"
+        >
+          0
+        </div>
+
+        <div class="stat-label">
+          Items in stock
+        </div>
+
       </div>
+
+
+      <div class="stat">
+
+        <div
+          id="lowItems"
+          class="stat-number"
+        >
+          0
+        </div>
+
+        <div class="stat-label">
+          Low stock
+        </div>
+
+      </div>
+
     </div>
 
-    <button class="primary scan-button" onclick="showScreen('scan')">
+
+    <button
+      class="primary scan-button"
+      onclick="showScreen('scan')"
+    >
+
       📷 SCAN GROCERY
+
     </button>
 
-    <div class="card">
-      <h2>Quick Add</h2>
-      <p>Add something without scanning a barcode.</p>
-      <button class="secondary" onclick="openAddProduct()">＋ Add Product</button>
-    </div>
 
     <div class="card">
-      <h2>Recent Activity</h2>
-      <div id="recentActivity"></div>
-    </div>
 
-  </section>
+      <h2>
+        Quick Add
+      </h2>
 
+      <p>
+        Add something without scanning.
+      </p>
 
-  <!-- SCAN -->
-  <section id="scan" class="screen">
-
-    <div class="card">
-      <h2>📷 Scan Product</h2>
-
-      <div class="mode">
-        <button id="addMode" class="selected-add" onclick="setMode('add')">
-          ＋ ADD
-        </button>
-
-        <button id="removeMode" onclick="setMode('remove')">
-          − REMOVE
-        </button>
-      </div>
-
-      <label>Barcode</label>
-      <input
-        id="barcodeInput"
-        type="text"
-        inputmode="numeric"
-        placeholder="Scan or enter UPC/EAN"
-        autofocus
+      <button
+        class="secondary"
+        onclick="openAddProduct()"
       >
 
-      <button class="primary" style="width:100%" onclick="processBarcode()">
-        Process Barcode
+        ＋ Add Product
+
       </button>
 
-      <p style="color:#687268;font-size:13px">
-        Camera barcode scanning will be connected in the next version.
-        You can already enter a barcode manually.
-      </p>
     </div>
 
+
     <div class="card">
-      <h3>How it works</h3>
-      <p>ADD increases your inventory by one.</p>
-      <p>REMOVE decreases your inventory by one.</p>
+
+      <h2>
+        Recent Activity
+      </h2>
+
+      <div id="recentActivity"></div>
+
     </div>
 
   </section>
+
+
+
+  <!-- SCANNER -->
+
+  <section
+    id="scan"
+    class="screen"
+  >
+
+    <div class="card">
+
+      <h2>
+        📷 Scan Product
+      </h2>
+
+
+      <div class="mode">
+
+        <button
+          id="addMode"
+          class="selected-add"
+          onclick="setMode('add')"
+        >
+
+          ＋ ADD
+
+        </button>
+
+
+        <button
+          id="removeMode"
+          onclick="setMode('remove')"
+        >
+
+          − REMOVE
+
+        </button>
+
+      </div>
+
+
+      <div id="reader"></div>
+
+
+      <button
+        id="startScannerButton"
+        class="primary"
+        style="width:100%"
+        onclick="startScanner()"
+      >
+
+        📷 Start Camera
+
+      </button>
+
+
+      <button
+        id="stopScannerButton"
+        class="danger hidden"
+        style="width:100%;margin-top:8px"
+        onclick="stopScanner()"
+      >
+
+        Stop Camera
+
+      </button>
+
+
+      <div
+        id="scanStatus"
+        class="scan-status"
+      >
+
+        Camera is off.
+
+      </div>
+
+
+      <div class="instructions">
+
+        <strong>ADD:</strong>
+        Scanning increases your inventory by 1.
+
+        <br><br>
+
+        <strong>REMOVE:</strong>
+        Scanning decreases your inventory by 1.
+
+        <br><br>
+
+        Point the camera at the barcode on your grocery product.
+
+      </div>
+
+
+      <details style="margin-top:15px">
+
+        <summary>
+          Enter barcode manually
+        </summary>
+
+
+        <input
+          id="barcodeInput"
+          type="text"
+          inputmode="numeric"
+          placeholder="UPC / EAN barcode"
+        >
+
+
+        <button
+          class="secondary"
+          style="width:100%"
+          onclick="processBarcode()"
+        >
+
+          Process Barcode
+
+        </button>
+
+      </details>
+
+    </div>
+
+  </section>
+
 
 
   <!-- INVENTORY -->
-  <section id="inventory" class="screen">
+
+  <section
+    id="inventory"
+    class="screen"
+  >
 
     <div class="card">
-      <h2>📦 Inventory</h2>
+
+      <h2>
+        📦 Inventory
+      </h2>
+
 
       <input
         id="searchInput"
@@ -344,23 +602,45 @@
         oninput="renderInventory()"
       >
 
-      <select id="categoryFilter" onchange="renderInventory()">
-        <option value="all">All Categories</option>
+
+      <select
+        id="categoryFilter"
+        onchange="renderInventory()"
+      >
+
+        <option value="all">
+          All Categories
+        </option>
+
       </select>
 
+
       <div id="inventoryList"></div>
+
     </div>
 
   </section>
 
 
+
   <!-- SHOPPING -->
-  <section id="shopping" class="screen">
+
+  <section
+    id="shopping"
+    class="screen"
+  >
 
     <div class="card">
-      <h2>🛒 Shopping List</h2>
 
-      <div style="display:flex;gap:8px">
+      <h2>
+        🛒 Shopping List
+      </h2>
+
+
+      <div
+        style="display:flex;gap:8px"
+      >
+
         <input
           id="shoppingInput"
           type="text"
@@ -368,96 +648,273 @@
           style="margin-bottom:0"
         >
 
-        <button class="primary" onclick="addShoppingItem()">Add</button>
+
+        <button
+          class="primary"
+          onclick="addShoppingItem()"
+        >
+
+          Add
+
+        </button>
+
       </div>
+
 
       <br>
 
-      <button class="secondary" onclick="addLowStockToShopping()">
+
+      <button
+        class="secondary"
+        onclick="addLowStockToShopping()"
+      >
+
         Add Low Stock Items
+
       </button>
+
 
       <div id="shoppingList"></div>
+
     </div>
 
   </section>
 
 
-  <!-- ADD PRODUCT MODAL-LIKE SCREEN -->
-  <section id="addProduct" class="screen">
+
+  <!-- ADD PRODUCT -->
+
+  <section
+    id="addProduct"
+    class="screen"
+  >
 
     <div class="card">
-      <h2>➕ Add Product</h2>
 
-      <label>Product Name</label>
-      <input id="newName" type="text" placeholder="Example: Milk">
+      <h2>
+        ➕ Add Product
+      </h2>
 
-      <label>Barcode</label>
-      <input id="newBarcode" type="text" inputmode="numeric" placeholder="Optional">
 
-      <label>Category</label>
+      <label>
+        Product Name
+      </label>
+
+      <input
+        id="newName"
+        type="text"
+        placeholder="Example: Milk"
+      >
+
+
+      <label>
+        Barcode
+      </label>
+
+      <input
+        id="newBarcode"
+        type="text"
+        inputmode="numeric"
+        placeholder="Optional"
+      >
+
+
+      <label>
+        Category
+      </label>
+
       <select id="newCategory">
-        <option>Produce</option>
-        <option>Meat</option>
-        <option>Dairy</option>
-        <option>Eggs</option>
-        <option>Frozen</option>
-        <option>Canned Goods</option>
-        <option>Dry Goods</option>
-        <option>Bread</option>
-        <option>Snacks</option>
-        <option>Drinks</option>
-        <option>Seasonings</option>
-        <option>Baking</option>
-        <option>Sauces & Condiments</option>
-        <option>Other</option>
+
+        <option>
+          Produce
+        </option>
+
+        <option>
+          Meat
+        </option>
+
+        <option>
+          Dairy
+        </option>
+
+        <option>
+          Eggs
+        </option>
+
+        <option>
+          Frozen
+        </option>
+
+        <option>
+          Canned Goods
+        </option>
+
+        <option>
+          Dry Goods
+        </option>
+
+        <option>
+          Bread
+        </option>
+
+        <option>
+          Snacks
+        </option>
+
+        <option>
+          Drinks
+        </option>
+
+        <option>
+          Seasonings
+        </option>
+
+        <option>
+          Baking
+        </option>
+
+        <option>
+          Sauces & Condiments
+        </option>
+
+        <option>
+          Other
+        </option>
+
       </select>
 
-      <label>Starting Quantity</label>
-      <input id="newQuantity" type="number" min="0" value="1">
 
-      <label>Minimum Stock</label>
-      <input id="newMinimum" type="number" min="0" value="1">
+      <label>
+        Starting Quantity
+      </label>
 
-      <button class="primary" onclick="saveNewProduct()">
+      <input
+        id="newQuantity"
+        type="number"
+        min="0"
+        value="1"
+      >
+
+
+      <label>
+        Minimum Stock
+      </label>
+
+      <input
+        id="newMinimum"
+        type="number"
+        min="0"
+        value="1"
+      >
+
+
+      <button
+        class="primary"
+        onclick="saveNewProduct()"
+      >
+
         Save Product
+
       </button>
 
-      <button class="secondary" onclick="showScreen('home')" style="margin-left:6px">
+
+      <button
+        class="secondary"
+        onclick="showScreen('home')"
+        style="margin-left:6px"
+      >
+
         Cancel
+
       </button>
+
     </div>
 
   </section>
+
 
 </main>
 
 
+
+<!-- BOTTOM NAVIGATION -->
+
 <nav class="bottom-nav">
 
-  <button onclick="showScreen('home')" data-screen="home">
-    <span class="big-icon">🏠</span>
+
+  <button
+    onclick="showScreen('home')"
+    data-screen="home"
+  >
+
+    <span class="big-icon">
+      🏠
+    </span>
+
     Home
+
   </button>
 
-  <button onclick="showScreen('scan')" data-screen="scan">
-    <span class="big-icon">📷</span>
+
+  <button
+    onclick="showScreen('scan')"
+    data-screen="scan"
+  >
+
+    <span class="big-icon">
+      📷
+    </span>
+
     Scan
+
   </button>
 
-  <button onclick="showScreen('inventory')" data-screen="inventory">
-    <span class="big-icon">📦</span>
+
+  <button
+    onclick="showScreen('inventory')"
+    data-screen="inventory"
+  >
+
+    <span class="big-icon">
+      📦
+    </span>
+
     Inventory
+
   </button>
 
-  <button onclick="showScreen('shopping')" data-screen="shopping">
-    <span class="big-icon">🛒</span>
+
+  <button
+    onclick="showScreen('shopping')"
+    data-screen="shopping"
+  >
+
+    <span class="big-icon">
+      🛒
+    </span>
+
     Shopping
+
   </button>
+
 
 </nav>
 
+
+
+<!-- BARCODE SCANNER LIBRARY -->
+
+<script
+  src="https://unpkg.com/html5-qrcode"
+  type="text/javascript"
+></script>
+
+
+<!-- OUR APP -->
+
 <script src="app.js"></script>
 
+
 </body>
+
 </html>
