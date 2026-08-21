@@ -1,0 +1,11 @@
+{
+  "name": "Kitchen Inventory",
+  "short_name": "Kitchen",
+  "description": "Household grocery and kitchen inventory tracker",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f5f7f5",
+  "theme_color": "#2e7d32",
+  "orientation": "portrait",
+  "icons": []
+}
