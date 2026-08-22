@@ -20,6 +20,9 @@ function save() {
 }
 
 function showScreen(id) {
+if (id !== "scan" && scannerRunning) {
+  stopScanner();
+}
   document.querySelectorAll(".screen").forEach(screen => {
     screen.classList.remove("active");
   });
