@@ -2,6 +2,11 @@ const STORAGE_KEY = "kitchenInventoryV1";
 const SHOPPING_KEY = "kitchenShoppingV1";
 const ACTIVITY_KEY = "kitchenActivityV1";
 
+
+// ==========================================
+// DATA
+// ==========================================
+
 let inventory = JSON.parse(
   localStorage.getItem(STORAGE_KEY) || "[]"
 );
@@ -14,17 +19,25 @@ let activity = JSON.parse(
   localStorage.getItem(ACTIVITY_KEY) || "[]"
 );
 
+
+// ==========================================
+// SCANNER STATE
+// ==========================================
+
 let mode = "add";
 
 let html5QrCode = null;
+
 let scannerRunning = false;
+
 let lastScannedCode = null;
+
 let lastScanTime = 0;
 
 
-// ===============================
+// ==========================================
 // SAVE DATA
-// ===============================
+// ==========================================
 
 function save() {
 
@@ -46,9 +59,9 @@ function save() {
 }
 
 
-// ===============================
+// ==========================================
 // SCREEN NAVIGATION
-// ===============================
+// ==========================================
 
 function showScreen(id) {
 
@@ -56,7 +69,9 @@ function showScreen(id) {
     id !== "scan" &&
     scannerRunning
   ) {
+
     stopScanner();
+
   }
 
 
@@ -74,7 +89,9 @@ function showScreen(id) {
 
 
   if (screen) {
+
     screen.classList.add("active");
+
   }
 
 
@@ -91,25 +108,31 @@ function showScreen(id) {
 
 
   if (id === "home") {
+
     renderHome();
+
   }
 
 
   if (id === "inventory") {
+
     renderInventory();
+
   }
 
 
   if (id === "shopping") {
+
     renderShopping();
+
   }
 
 }
 
 
-// ===============================
+// ==========================================
 // ADD / REMOVE MODE
-// ===============================
+// ==========================================
 
 function setMode(newMode) {
 
@@ -123,18 +146,27 @@ function setMode(newMode) {
     document.getElementById("removeMode");
 
 
+  if (!addButton || !removeButton) {
+
+    return;
+
+  }
+
+
   if (newMode === "add") {
 
     addButton.className =
       "selected-add";
 
-    removeButton.className = "";
+    removeButton.className =
+      "";
 
   }
 
   else {
 
-    addButton.className = "";
+    addButton.className =
+      "";
 
     removeButton.className =
       "selected-remove";
@@ -144,14 +176,16 @@ function setMode(newMode) {
 }
 
 
-// ===============================
-// CAMERA SCANNER
-// ===============================
+// ==========================================
+// START CAMERA
+// ==========================================
 
 function startScanner() {
 
   if (scannerRunning) {
+
     return;
+
   }
 
 
@@ -177,7 +211,7 @@ function startScanner() {
   if (!reader) {
 
     alert(
-      "Scanner area could not be found."
+      "The scanner area could not be found."
     );
 
     return;
@@ -189,6 +223,10 @@ function startScanner() {
     document.getElementById(
       "scanStatus"
     );
+
+
+  status.className =
+    "scan-status";
 
 
   status.textContent =
@@ -204,8 +242,11 @@ function startScanner() {
     fps: 10,
 
     qrbox: {
+
       width: 280,
+
       height: 140
+
     },
 
     aspectRatio: 1.777778
@@ -232,8 +273,8 @@ function startScanner() {
     function(errorMessage) {
 
       // Normal scanning attempts
-      // produce errors while looking
-      // for a barcode.
+      // produce messages while the
+      // camera searches for a barcode.
       //
       // We intentionally ignore them.
 
@@ -243,28 +284,30 @@ function startScanner() {
 
   .then(function() {
 
-    scannerRunning = true;
+    scannerRunning =
+      true;
 
 
     document
       .getElementById(
         "startScannerButton"
       )
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
 
 
     document
       .getElementById(
         "stopScannerButton"
       )
-      .classList.remove("hidden");
+      .classList
+      .remove("hidden");
 
 
     status.textContent =
-      "Point your camera at a grocery barcode.";
+      "Ready — point camera at barcode.";
 
   })
-
 
   .catch(function(error) {
 
@@ -280,8 +323,7 @@ function startScanner() {
 
     alert(
       "The camera could not be started.\n\n" +
-      "Make sure you allowed camera access " +
-      "when your phone asked."
+      "Please make sure you allowed camera access."
     );
 
   });
@@ -289,17 +331,19 @@ function startScanner() {
 }
 
 
-// ===============================
+// ==========================================
 // BARCODE DETECTED
-// ===============================
+// ==========================================
 
-function handleBarcodeScan(
-  barcode
-) {
+function handleBarcodeScan(barcode) {
 
   const now =
     Date.now();
 
+
+  // Prevent duplicate scans.
+  // The same barcode cannot be processed
+  // again for two seconds.
 
   if (
 
@@ -324,17 +368,6 @@ function handleBarcodeScan(
     now;
 
 
-  const status =
-    document.getElementById(
-      "scanStatus"
-    );
-
-
-  status.textContent =
-    "Barcode found: " +
-    barcode;
-
-
   processScannedBarcode(
     barcode
   );
@@ -342,9 +375,9 @@ function handleBarcodeScan(
 }
 
 
-// ===============================
-// PROCESS SCANNED PRODUCT
-// ===============================
+// ==========================================
+// PROCESS BARCODE
+// ==========================================
 
 function processScannedBarcode(
   barcode
@@ -358,9 +391,9 @@ function processScannedBarcode(
     );
 
 
-  // =============================
+  // ========================================
   // NEW PRODUCT
-  // =============================
+  // ========================================
 
   if (!product) {
 
@@ -370,16 +403,20 @@ function processScannedBarcode(
     const name =
       prompt(
 
-        "New barcode found:\n\n" +
+        "NEW PRODUCT\n\n" +
+
+        "Barcode:\n" +
 
         barcode +
 
-        "\n\nWhat is the product name?"
+        "\n\nEnter the product name:"
 
       );
 
 
     if (!name) {
+
+      startScanner();
 
       return;
 
@@ -389,7 +426,7 @@ function processScannedBarcode(
     const category =
       prompt(
 
-        "What category is this product?",
+        "Product category:",
 
         "Other"
 
@@ -401,7 +438,7 @@ function processScannedBarcode(
 
         prompt(
 
-          "Minimum stock level?",
+          "Minimum stock level:",
 
           "1"
 
@@ -413,7 +450,7 @@ function processScannedBarcode(
     product = {
 
       id:
-        crypto.randomUUID(),
+        createID(),
 
       barcode:
         barcode,
@@ -437,12 +474,15 @@ function processScannedBarcode(
       product
     );
 
+
+    save();
+
   }
 
 
-  // =============================
+  // ========================================
   // ADD
-  // =============================
+  // ========================================
 
   if (mode === "add") {
 
@@ -450,18 +490,42 @@ function processScannedBarcode(
 
 
     logActivity(
-
       "Added " +
       product.name
+    );
 
+
+    save();
+
+
+    renderHome();
+
+    renderInventory();
+
+
+    showScanConfirmation(
+
+      "ITEM ADDED",
+
+      product.name,
+
+      product.quantity,
+
+      "scan-success"
+
+    );
+
+
+    beep(
+      "success"
     );
 
   }
 
 
-  // =============================
+  // ========================================
   // REMOVE
-  // =============================
+  // ========================================
 
   else {
 
@@ -473,35 +537,79 @@ function processScannedBarcode(
 
 
       logActivity(
-
         "Removed " +
         product.name
+      );
 
+
+      save();
+
+
+      renderHome();
+
+      renderInventory();
+
+
+      showScanConfirmation(
+
+        "ITEM REMOVED",
+
+        product.name,
+
+        product.quantity,
+
+        "scan-removed"
+
+      );
+
+
+      beep(
+        "remove"
       );
 
     }
 
     else {
 
-      alert(
+      showScanConfirmation(
 
-        product.name +
-        " is already at 0."
+        "OUT OF STOCK",
 
+        product.name,
+
+        0,
+
+        "scan-warning"
+
+      );
+
+
+      beep(
+        "warning"
       );
 
     }
 
   }
 
+}
 
-  save();
 
+// ==========================================
+// SCAN ACKNOWLEDGEMENT
+// ==========================================
 
-  renderHome();
+function showScanConfirmation(
 
-  renderInventory();
+  action,
 
+  productName,
+
+  quantity,
+
+  cssClass
+
+) {
 
   const status =
     document.getElementById(
@@ -509,26 +617,236 @@ function processScannedBarcode(
     );
 
 
-  if (status) {
+  if (!status) {
+
+    return;
+
+  }
+
+
+  status.className =
+    "scan-status " +
+    cssClass;
+
+
+  status.innerHTML = `
+
+    <div
+      style="
+        font-size:24px;
+        font-weight:900;
+        margin-bottom:6px;
+      "
+    >
+
+      ${escapeHTML(action)}
+
+    </div>
+
+
+    <div
+      style="
+        font-size:18px;
+        font-weight:700;
+      "
+    >
+
+      ${escapeHTML(productName)}
+
+    </div>
+
+
+    <div
+      style="
+        font-size:16px;
+        margin-top:4px;
+      "
+    >
+
+      Quantity:
+      <strong>
+        ${quantity}
+      </strong>
+
+    </div>
+
+  `;
+
+
+  // ========================================
+  // PHONE VIBRATION
+  // ========================================
+
+  if (
+    "vibrate" in navigator
+  ) {
+
+    if (
+      cssClass ===
+      "scan-warning"
+    ) {
+
+      navigator.vibrate(
+        [100, 80, 100]
+      );
+
+    }
+
+    else {
+
+      navigator.vibrate(
+        120
+      );
+
+    }
+
+  }
+
+
+  // ========================================
+  // RETURN TO READY MESSAGE
+  // ========================================
+
+  setTimeout(function() {
+
+    if (
+      !scannerRunning
+    ) {
+
+      return;
+
+    }
+
+
+    status.className =
+      "scan-status";
+
 
     status.textContent =
+      "✓ Ready for next barcode.";
 
-      product.name +
+  }, 1800);
 
-      ": " +
+}
 
-      product.quantity +
 
-      " in stock";
+// ==========================================
+// BEEP
+// ==========================================
+
+function beep(type) {
+
+  try {
+
+    const AudioContext =
+      window.AudioContext ||
+      window.webkitAudioContext;
+
+
+    if (!AudioContext) {
+
+      return;
+
+    }
+
+
+    const audioContext =
+      new AudioContext();
+
+
+    const oscillator =
+      audioContext.createOscillator();
+
+
+    const gain =
+      audioContext.createGain();
+
+
+    oscillator.connect(
+      gain
+    );
+
+
+    gain.connect(
+      audioContext.destination
+    );
+
+
+    let frequency =
+      800;
+
+
+    if (
+      type === "remove"
+    ) {
+
+      frequency =
+        550;
+
+    }
+
+
+    if (
+      type === "warning"
+    ) {
+
+      frequency =
+        300;
+
+    }
+
+
+    oscillator.frequency.value =
+      frequency;
+
+
+    oscillator.type =
+      "sine";
+
+
+    gain.gain.setValueAtTime(
+      0.001,
+      audioContext.currentTime
+    );
+
+
+    gain.gain.exponentialRampToValueAtTime(
+      0.25,
+      audioContext.currentTime + 0.01
+    );
+
+
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      audioContext.currentTime + 0.18
+    );
+
+
+    oscillator.start();
+
+
+    oscillator.stop(
+      audioContext.currentTime +
+      0.18
+    );
+
+
+  }
+
+  catch (error) {
+
+    console.log(
+      "Audio acknowledgement unavailable."
+    );
 
   }
 
 }
 
 
-// ===============================
+// ==========================================
 // STOP CAMERA
-// ===============================
+// ==========================================
 
 function stopScanner() {
 
@@ -593,13 +911,16 @@ function stopScanner() {
 
       if (status) {
 
+        status.className =
+          "scan-status";
+
+
         status.textContent =
           "Camera is off.";
 
       }
 
     })
-
 
     .catch(function(error) {
 
@@ -613,9 +934,9 @@ function stopScanner() {
 }
 
 
-// ===============================
+// ==========================================
 // MANUAL BARCODE
-// ===============================
+// ==========================================
 
 function processBarcode() {
 
@@ -623,6 +944,13 @@ function processBarcode() {
     document.getElementById(
       "barcodeInput"
     );
+
+
+  if (!input) {
+
+    return;
+
+  }
 
 
   const barcode =
@@ -650,9 +978,9 @@ function processBarcode() {
 }
 
 
-// ===============================
-// QUICK ADD PRODUCT
-// ===============================
+// ==========================================
+// ADD PRODUCT SCREEN
+// ==========================================
 
 function openAddProduct() {
 
@@ -683,9 +1011,9 @@ function openAddProduct() {
 }
 
 
-// ===============================
+// ==========================================
 // SAVE NEW PRODUCT
-// ===============================
+// ==========================================
 
 function saveNewProduct() {
 
@@ -698,7 +1026,7 @@ function saveNewProduct() {
   if (!name) {
 
     alert(
-      "Enter a product name."
+      "Please enter a product name."
     );
 
     return;
@@ -775,7 +1103,7 @@ function saveNewProduct() {
     inventory.push({
 
       id:
-        crypto.randomUUID(),
+        createID(),
 
       barcode:
         barcode,
@@ -817,9 +1145,9 @@ function saveNewProduct() {
 }
 
 
-// ===============================
+// ==========================================
 // CHANGE QUANTITY
-// ===============================
+// ==========================================
 
 function changeQuantity(
   id,
@@ -834,8 +1162,14 @@ function changeQuantity(
 
 
   if (!product) {
+
     return;
+
   }
+
+
+  const oldQuantity =
+    product.quantity;
 
 
   product.quantity =
@@ -849,17 +1183,32 @@ function changeQuantity(
     );
 
 
-  logActivity(
+  if (
+    product.quantity !==
+    oldQuantity
+  ) {
 
-    amount > 0
+    if (
+      amount > 0
+    ) {
 
-      ? "Added " +
+      logActivity(
+        "Added " +
         product.name
+      );
 
-      : "Removed " +
+    }
+
+    else {
+
+      logActivity(
+        "Removed " +
         product.name
+      );
 
-  );
+    }
+
+  }
 
 
   save();
@@ -872,11 +1221,13 @@ function changeQuantity(
 }
 
 
-// ===============================
+// ==========================================
 // DELETE PRODUCT
-// ===============================
+// ==========================================
 
-function deleteProduct(id) {
+function deleteProduct(
+  id
+) {
 
   const product =
     inventory.find(
@@ -886,15 +1237,19 @@ function deleteProduct(id) {
 
 
   if (!product) {
+
     return;
+
   }
 
 
   if (
     !confirm(
+
       "Delete " +
       product.name +
       " from inventory?"
+
     )
   ) {
 
@@ -913,16 +1268,16 @@ function deleteProduct(id) {
   save();
 
 
-  renderInventory();
-
   renderHome();
+
+  renderInventory();
 
 }
 
 
-// ===============================
+// ==========================================
 // HOME
-// ===============================
+// ==========================================
 
 function renderHome() {
 
@@ -947,22 +1302,45 @@ function renderHome() {
     ).length;
 
 
-  document.getElementById(
-    "totalItems"
-  ).textContent =
-    total;
+  const totalElement =
+    document.getElementById(
+      "totalItems"
+    );
 
 
-  document.getElementById(
-    "lowItems"
-  ).textContent =
-    low;
+  const lowElement =
+    document.getElementById(
+      "lowItems"
+    );
+
+
+  if (totalElement) {
+
+    totalElement.textContent =
+      total;
+
+  }
+
+
+  if (lowElement) {
+
+    lowElement.textContent =
+      low;
+
+  }
 
 
   const recent =
     document.getElementById(
       "recentActivity"
     );
+
+
+  if (!recent) {
+
+    return;
+
+  }
 
 
   if (
@@ -981,17 +1359,22 @@ function renderHome() {
     activity
       .slice(0, 8)
       .map(
+
         item =>
-          `<p>${escapeHTML(item)}</p>`
+
+          `<p>${escapeHTML(
+            item
+          )}</p>`
+
       )
       .join("");
 
 }
 
 
-// ===============================
+// ==========================================
 // INVENTORY
-// ===============================
+// ==========================================
 
 function renderInventory() {
 
@@ -1001,47 +1384,67 @@ function renderInventory() {
     );
 
 
+  if (!list) {
+
+    return;
+
+  }
+
+
+  const searchElement =
+    document.getElementById(
+      "searchInput"
+    );
+
+
+  const categoryElement =
+    document.getElementById(
+      "categoryFilter"
+    );
+
+
   const search =
     (
-      document.getElementById(
-        "searchInput"
-      )?.value || ""
-    ).toLowerCase();
+      searchElement?.value ||
+      ""
+    )
+      .toLowerCase();
 
 
   const category =
-    document.getElementById(
-      "categoryFilter"
-    )?.value || "all";
+    categoryElement?.value ||
+    "all";
 
 
   updateCategoryFilter();
 
 
   const filtered =
-    inventory.filter(item => {
+    inventory.filter(
+      item => {
 
-      const matchesSearch =
+        const matchesSearch =
 
-        item.name
-          .toLowerCase()
-          .includes(search);
-
-
-      const matchesCategory =
-
-        category === "all" ||
-
-        item.category ===
-          category;
+          item.name
+            .toLowerCase()
+            .includes(search);
 
 
-      return (
-        matchesSearch &&
-        matchesCategory
-      );
+        const matchesCategory =
 
-    });
+          category === "all" ||
+
+          item.category ===
+            category;
+
+
+        return (
+          matchesSearch &&
+          matchesCategory
+        );
+
+      }
+    );
 
 
   if (
@@ -1058,99 +1461,116 @@ function renderInventory() {
 
   list.innerHTML =
     filtered
-      .map(item => {
+      .map(
 
-        const isLow =
-          item.quantity <=
-          item.minimum;
+        item => {
+
+          const isLow =
+            item.quantity <=
+            item.minimum;
 
 
-        return `
+          return `
 
-          <div class="product">
+            <div class="product">
 
-            <div style="flex:1">
+              <div
+                style="flex:1"
+              >
 
-              <div class="product-name">
+                <div
+                  class="product-name"
+                >
 
-                ${escapeHTML(
-                  item.name
-                )}
+                  ${escapeHTML(
+                    item.name
+                  )}
+
+                </div>
+
+
+                <div
+                  class="product-meta"
+                >
+
+                  ${escapeHTML(
+                    item.category
+                  )}
+
+                  ${
+                    isLow
+
+                      ? ' • <span class="low">LOW</span>'
+
+                      : ''
+                  }
+
+                </div>
 
               </div>
 
-              <div class="product-meta">
 
-                ${escapeHTML(
-                  item.category
-                )}
+              <div
+                class="qty-buttons"
+              >
 
-                ${
-                  isLow
-                    ? ' • <span class="low">LOW</span>'
-                    : ''
-                }
+                <button
+                  class="secondary"
+                  onclick="changeQuantity(
+                    '${item.id}',
+                    -1
+                  )"
+                >
+                  −
+                </button>
+
+
+                <div
+                  class="quantity"
+                >
+
+                  ${item.quantity}
+
+                </div>
+
+
+                <button
+                  class="primary"
+                  onclick="changeQuantity(
+                    '${item.id}',
+                    1
+                  )"
+                >
+                  +
+                </button>
+
+
+                <button
+                  class="secondary"
+                  onclick="deleteProduct(
+                    '${item.id}'
+                  )"
+                >
+                  🗑
+                </button>
 
               </div>
 
             </div>
 
+          `;
 
-            <div class="qty-buttons">
+        }
 
-              <button
-                class="secondary"
-                onclick="changeQuantity(
-                  '${item.id}',
-                  -1
-                )"
-              >
-                −
-              </button>
-
-
-              <div class="quantity">
-
-                ${item.quantity}
-
-              </div>
-
-
-              <button
-                class="primary"
-                onclick="changeQuantity(
-                  '${item.id}',
-                  1
-                )"
-              >
-                +
-              </button>
-
-
-              <button
-                class="secondary"
-                onclick="deleteProduct(
-                  '${item.id}'
-                )"
-              >
-                🗑
-              </button>
-
-            </div>
-
-          </div>
-
-        `;
-
-      })
+      )
       .join("");
 
 }
 
 
-// ===============================
+// ==========================================
 // CATEGORY FILTER
-// ===============================
+// ==========================================
 
 function updateCategoryFilter() {
 
@@ -1161,7 +1581,9 @@ function updateCategoryFilter() {
 
 
   if (!select) {
+
     return;
+
   }
 
 
@@ -1180,28 +1602,30 @@ function updateCategoryFilter() {
 
       )
 
-    ].sort();
+    ]
+      .filter(Boolean)
+      .sort();
 
 
   select.innerHTML =
 
-    '<option value="all">' +
-    'All Categories' +
-    '</option>' +
+    `<option value="all">
+      All Categories
+    </option>` +
 
     categories
       .map(
 
         category =>
 
-          `<option value="${escapeHTML(
-            category
-          )}">
-
+          `<option
+            value="${escapeHTML(
+              category
+            )}"
+          >
             ${escapeHTML(
               category
             )}
-
           </option>`
 
       )
@@ -1222,9 +1646,9 @@ function updateCategoryFilter() {
 }
 
 
-// ===============================
+// ==========================================
 // SHOPPING LIST
-// ===============================
+// ==========================================
 
 function addShoppingItem() {
 
@@ -1234,19 +1658,28 @@ function addShoppingItem() {
     );
 
 
+  if (!input) {
+
+    return;
+
+  }
+
+
   const name =
     input.value.trim();
 
 
   if (!name) {
+
     return;
+
   }
 
 
   shopping.push({
 
     id:
-      crypto.randomUUID(),
+      createID(),
 
     name:
       name,
@@ -1257,7 +1690,8 @@ function addShoppingItem() {
   });
 
 
-  input.value = "";
+  input.value =
+    "";
 
 
   save();
@@ -1280,41 +1714,43 @@ function addLowStockToShopping() {
     );
 
 
-  lowStock.forEach(item => {
+  lowStock.forEach(
+    item => {
 
-    const exists =
-      shopping.some(
+      const exists =
+        shopping.some(
 
-        shop =>
+          shop =>
 
-          shop.name
-            .toLowerCase() ===
-          item.name
-            .toLowerCase() &&
+            shop.name
+              .toLowerCase() ===
+            item.name
+              .toLowerCase() &&
 
-          !shop.completed
+            !shop.completed
 
-      );
+        );
 
 
-    if (!exists) {
+      if (!exists) {
 
-      shopping.push({
+        shopping.push({
 
-        id:
-          crypto.randomUUID(),
+          id:
+            createID(),
 
-        name:
-          item.name,
+          name:
+            item.name,
 
-        completed:
-          false
+          completed:
+            false
 
-      });
+        });
+
+      }
 
     }
-
-  });
+  );
 
 
   save();
@@ -1330,7 +1766,9 @@ function addLowStockToShopping() {
 }
 
 
-function toggleShopping(id) {
+function toggleShopping(
+  id
+) {
 
   const item =
     shopping.find(
@@ -1340,7 +1778,9 @@ function toggleShopping(id) {
 
 
   if (!item) {
+
     return;
+
   }
 
 
@@ -1356,7 +1796,9 @@ function toggleShopping(id) {
 }
 
 
-function removeShopping(id) {
+function removeShopping(
+  id
+) {
 
   shopping =
     shopping.filter(
@@ -1381,6 +1823,13 @@ function renderShopping() {
     );
 
 
+  if (!list) {
+
+    return;
+
+  }
+
+
   if (
     !shopping.length
   ) {
@@ -1399,7 +1848,9 @@ function renderShopping() {
 
         item => `
 
-          <div class="shopping-item">
+          <div
+            class="shopping-item"
+          >
 
             <input
               type="checkbox"
@@ -1419,9 +1870,12 @@ function renderShopping() {
             <div
               style="
                 flex:1;
+
                 ${
                   item.completed
+
                     ? "text-decoration:line-through;color:#888"
+
                     : ""
                 }
               "
@@ -1440,7 +1894,9 @@ function renderShopping() {
                 '${item.id}'
               )"
             >
+
               ✕
+
             </button>
 
           </div>
@@ -1453,9 +1909,9 @@ function renderShopping() {
 }
 
 
-// ===============================
-// ACTIVITY
-// ===============================
+// ==========================================
+// ACTIVITY LOG
+// ==========================================
 
 function logActivity(
   message
@@ -1464,11 +1920,14 @@ function logActivity(
   const time =
     new Date()
       .toLocaleTimeString(
+
         [],
+
         {
           hour: "numeric",
           minute: "2-digit"
         }
+
       );
 
 
@@ -1490,9 +1949,39 @@ function logActivity(
 }
 
 
-// ===============================
+// ==========================================
+// CREATE ID
+// ==========================================
+
+function createID() {
+
+  if (
+    window.crypto &&
+    crypto.randomUUID
+  ) {
+
+    return crypto.randomUUID();
+
+  }
+
+
+  return (
+
+    Date.now()
+      .toString(36) +
+
+    Math.random()
+      .toString(36)
+      .substring(2)
+
+  );
+
+}
+
+
+// ==========================================
 // SECURITY
-// ===============================
+// ==========================================
 
 function escapeHTML(
   value
@@ -1528,12 +2017,13 @@ function escapeHTML(
 }
 
 
-// ===============================
+// ==========================================
 // SERVICE WORKER
-// ===============================
+// ==========================================
 
 if (
-  "serviceWorker" in navigator
+  "serviceWorker" in
+  navigator
 ) {
 
   window.addEventListener(
@@ -1549,7 +2039,7 @@ if (
           error => {
 
             console.log(
-              "Service worker registration failed:",
+              "Service worker unavailable:",
               error
             );
 
@@ -1562,12 +2052,21 @@ if (
 }
 
 
-// ===============================
-// START APP
-// ===============================
+// ==========================================
+// START APPLICATION
+// ==========================================
 
-renderHome();
+document.addEventListener(
+  "DOMContentLoaded",
+  function() {
 
-renderInventory();
+    renderHome();
 
-renderShopping();
+    renderInventory();
+
+    renderShopping();
+
+    setMode("add");
+
+  }
+);
