@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
   <meta charset="UTF-8">
 
   <meta
@@ -11,20 +12,41 @@
 
   <meta
     name="theme-color"
-    content="#2e7d32"
+    content="#166534"
   >
 
   <meta
-    name="description"
-    content="Household grocery and kitchen inventory tracker"
+    name="apple-mobile-web-app-capable"
+    content="yes"
   >
+
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="default"
+  >
+
+  <meta
+    name="apple-mobile-web-app-title"
+    content="Kitchen Inventory"
+  >
+
+  <title>Kitchen Inventory</title>
+
+
+  <!-- PWA -->
 
   <link
     rel="manifest"
     href="manifest.json"
   >
 
-  <title>Kitchen Inventory</title>
+
+  <!-- Barcode scanner library -->
+
+  <script
+    src="https://unpkg.com/html5-qrcode"
+  ></script>
+
 
   <style>
 
@@ -32,299 +54,661 @@
       box-sizing: border-box;
     }
 
+
     body {
+
       margin: 0;
+
       font-family:
-        system-ui,
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
+        Roboto,
+        Arial,
         sans-serif;
 
       background: #f5f7f5;
-      color: #1d261d;
+
+      color: #1f2937;
+
+      padding-bottom: 80px;
+
     }
 
-    header {
-      background: #2e7d32;
-      color: white;
-      padding: 20px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
 
-    header h1 {
-      margin: 0;
-      font-size: 23px;
-    }
-
-    header p {
-      margin: 4px 0 0;
-      opacity: .85;
-      font-size: 14px;
-    }
-
-    main {
-      max-width: 700px;
-      margin: auto;
-      padding: 18px;
-      padding-bottom: 100px;
-    }
-
-    .screen {
-      display: none;
-    }
-
-    .screen.active {
-      display: block;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .stat {
-      background: white;
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow:
-        0 2px 8px rgba(0,0,0,.06);
-    }
-
-    .stat-number {
-      font-size: 30px;
-      font-weight: 800;
-    }
-
-    .stat-label {
-      color: #687268;
-      font-size: 14px;
-    }
-
-    button {
-      border: 0;
-      border-radius: 12px;
-      padding: 13px 16px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .primary {
-      background: #2e7d32;
-      color: white;
-    }
-
-    .danger {
-      background: #c62828;
-      color: white;
-    }
-
-    .secondary {
-      background: #e8eee8;
-      color: #234423;
-    }
-
-    .scan-button {
-      width: 100%;
-      font-size: 20px;
-      padding: 20px;
-      margin-bottom: 18px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 16px;
-      padding: 18px;
-      margin-bottom: 14px;
-
-      box-shadow:
-        0 2px 8px rgba(0,0,0,.06);
-    }
-
+    button,
     input,
     select {
-      width: 100%;
-      padding: 13px;
-      margin: 6px 0 12px;
 
-      border: 1px solid #ccd4cc;
-      border-radius: 10px;
+      font: inherit;
 
-      font-size: 16px;
-      background: white;
     }
 
-    label {
-      font-size: 14px;
-      font-weight: 700;
-    }
 
-    .mode {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
+    button {
 
-    .selected-add {
-      background: #2e7d32;
-      color: white;
-    }
+      border: none;
 
-    .selected-remove {
-      background: #c62828;
-      color: white;
-    }
-
-    #reader {
-      width: 100%;
-      overflow: hidden;
-      border-radius: 14px;
-      margin-bottom: 14px;
-      background: #111;
-    }
-
-    #reader video {
-      width: 100% !important;
-      border-radius: 14px;
-    }
-
-    .product {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-
-      padding: 14px 0;
-
-      border-bottom:
-        1px solid #edf0ed;
-    }
-
-    .product:last-child {
-      border-bottom: 0;
-    }
-
-    .product-name {
-      font-weight: 750;
-    }
-
-    .product-meta {
-      font-size: 13px;
-      color: #697169;
-      margin-top: 3px;
-    }
-
-    .quantity {
-      font-size: 20px;
-      font-weight: 800;
-      min-width: 40px;
-      text-align: center;
-    }
-
-    .qty-buttons {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .qty-buttons button {
-      padding: 7px 11px;
-      border-radius: 9px;
-    }
-
-    .low {
-      color: #c62828;
-      font-weight: 800;
-    }
-
-    .empty {
-      text-align: center;
-      color: #737b73;
-      padding: 30px 10px;
-    }
-
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-
-      height: 70px;
-
-      background: white;
-      border-top: 1px solid #ddd;
-
-      display: grid;
-      grid-template-columns:
-        repeat(4, 1fr);
-
-      z-index: 20;
-    }
-
-    .bottom-nav button {
-      background: white;
-      color: #586158;
-      border-radius: 0;
-
-      padding: 8px 2px;
-
-      font-size: 12px;
-    }
-
-    .bottom-nav button.active {
-      color: #2e7d32;
-    }
-
-    .big-icon {
-      font-size: 28px;
-      display: block;
-    }
-
-    .shopping-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-
-      padding: 12px 0;
-
-      border-bottom:
-        1px solid #eee;
-    }
-
-    .shopping-item input[type="checkbox"] {
-      width: 22px;
-      height: 22px;
-      margin: 0;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .scan-status {
-      text-align: center;
-      padding: 12px;
-
-      color: #687268;
-
-      font-size: 14px;
-    }
-
-    .instructions {
-      background: #f0f5f0;
       border-radius: 12px;
 
-      padding: 12px;
+      padding: 13px 16px;
+
+      font-weight: 700;
+
+      cursor: pointer;
+
+    }
+
+
+    button:active {
+
+      transform: scale(.97);
+
+    }
+
+
+    .primary {
+
+      background: #166534;
+
+      color: white;
+
+    }
+
+
+    .secondary {
+
+      background: #e5e7eb;
+
+      color: #374151;
+
+    }
+
+
+    .selected-add {
+
+      background: #16a34a !important;
+
+      color: white !important;
+
+    }
+
+
+    .selected-remove {
+
+      background: #dc2626 !important;
+
+      color: white !important;
+
+    }
+
+
+    .hidden {
+
+      display: none !important;
+
+    }
+
+
+    .screen {
+
+      display: none;
+
+      max-width: 700px;
+
+      margin: 0 auto;
+
+      padding: 20px;
+
+    }
+
+
+    .screen.active {
+
+      display: block;
+
+    }
+
+
+    header {
+
+      margin-bottom: 20px;
+
+    }
+
+
+    h1 {
+
+      margin: 0 0 5px;
+
+      font-size: 28px;
+
+    }
+
+
+    h2 {
+
+      margin-top: 10px;
+
+    }
+
+
+    .subtitle {
+
+      color: #6b7280;
+
+    }
+
+
+    .stats {
+
+      display: grid;
+
+      grid-template-columns: 1fr 1fr;
+
+      gap: 12px;
+
+      margin-bottom: 20px;
+
+    }
+
+
+    .stat {
+
+      background: white;
+
+      border-radius: 16px;
+
+      padding: 20px;
+
+      box-shadow:
+        0 2px 8px
+        rgba(0,0,0,.06);
+
+    }
+
+
+    .stat-number {
+
+      font-size: 32px;
+
+      font-weight: 900;
+
+      color: #166534;
+
+    }
+
+
+    .card {
+
+      background: white;
+
+      border-radius: 18px;
+
+      padding: 18px;
+
+      margin-bottom: 16px;
+
+      box-shadow:
+        0 2px 8px
+        rgba(0,0,0,.06);
+
+    }
+
+
+    .full-button {
+
+      width: 100%;
+
+      font-size: 17px;
+
+    }
+
+
+    .mode-buttons {
+
+      display: grid;
+
+      grid-template-columns: 1fr 1fr;
+
+      gap: 10px;
+
+      margin-bottom: 15px;
+
+    }
+
+
+    .mode-buttons button {
+
+      font-size: 18px;
+
+      padding: 15px;
+
+    }
+
+
+    #reader {
+
+      width: 100%;
+
+      overflow: hidden;
+
+      border-radius: 16px;
+
+      background: #111827;
+
+      min-height: 100px;
+
+    }
+
+
+    .scan-status {
 
       margin-top: 12px;
 
+      padding: 14px;
+
+      border-radius: 12px;
+
+      background: #f3f4f6;
+
+      color: #374151;
+
+      text-align: center;
+
+      font-weight: 600;
+
+    }
+
+
+    /*
+      BIG SCAN ACKNOWLEDGEMENT
+    */
+
+    .scan-confirmation {
+
+      margin: 15px 0;
+
+      padding: 20px;
+
+      border-radius: 18px;
+
+      text-align: center;
+
+      font-size: 18px;
+
+      font-weight: 700;
+
+      box-shadow:
+        0 4px 12px
+        rgba(0,0,0,.08);
+
+      animation:
+        confirmationPop
+        .2s ease-out;
+
+    }
+
+
+    .scan-confirmation.hidden {
+
+      display: none;
+
+    }
+
+
+    .scan-confirmation.added {
+
+      background: #dcfce7;
+
+      color: #166534;
+
+      border: 3px solid #22c55e;
+
+    }
+
+
+    .scan-confirmation.removed {
+
+      background: #fee2e2;
+
+      color: #991b1b;
+
+      border: 3px solid #ef4444;
+
+    }
+
+
+    .scan-confirmation.warning {
+
+      background: #fef3c7;
+
+      color: #92400e;
+
+      border: 3px solid #f59e0b;
+
+    }
+
+
+    .confirmation-action {
+
+      font-size: 28px;
+
+      font-weight: 900;
+
+      margin-bottom: 6px;
+
+    }
+
+
+    .confirmation-product {
+
+      font-size: 21px;
+
+      font-weight: 800;
+
+    }
+
+
+    .confirmation-quantity {
+
+      font-size: 18px;
+
+      margin-top: 8px;
+
+    }
+
+
+    @keyframes confirmationPop {
+
+      from {
+
+        transform: scale(.9);
+
+        opacity: .3;
+
+      }
+
+      to {
+
+        transform: scale(1);
+
+        opacity: 1;
+
+      }
+
+    }
+
+
+    .instructions {
+
+      color: #6b7280;
+
       font-size: 14px;
+
+      line-height: 1.5;
+
+    }
+
+
+    .manual-barcode {
+
+      display: grid;
+
+      grid-template-columns: 1fr auto;
+
+      gap: 8px;
+
+      margin-top: 15px;
+
+    }
+
+
+    input,
+    select {
+
+      width: 100%;
+
+      padding: 13px;
+
+      border: 1px solid #d1d5db;
+
+      border-radius: 10px;
+
+      background: white;
+
+    }
+
+
+    .product {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 10px;
+
+      background: white;
+
+      border-radius: 14px;
+
+      padding: 15px;
+
+      margin-bottom: 10px;
+
+      box-shadow:
+        0 2px 7px
+        rgba(0,0,0,.05);
+
+    }
+
+
+    .product-name {
+
+      font-weight: 800;
+
+      font-size: 17px;
+
+    }
+
+
+    .product-meta {
+
+      color: #6b7280;
+
+      font-size: 13px;
+
+      margin-top: 3px;
+
+    }
+
+
+    .quantity {
+
+      min-width: 35px;
+
+      text-align: center;
+
+      font-size: 18px;
+
+      font-weight: 800;
+
+    }
+
+
+    .qty-buttons {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 5px;
+
+    }
+
+
+    .qty-buttons button {
+
+      padding: 9px 11px;
+
+    }
+
+
+    .low {
+
+      color: #dc2626;
+
+      font-weight: 800;
+
+    }
+
+
+    .shopping-item {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 10px;
+
+      background: white;
+
+      padding: 14px;
+
+      margin-bottom: 8px;
+
+      border-radius: 12px;
+
+    }
+
+
+    .shopping-item input {
+
+      width: 22px;
+
+      height: 22px;
+
+    }
+
+
+    .empty {
+
+      color: #6b7280;
+
+      padding: 20px;
+
+      text-align: center;
+
+    }
+
+
+    .form-group {
+
+      margin-bottom: 15px;
+
+    }
+
+
+    .form-group label {
+
+      display: block;
+
+      font-weight: 700;
+
+      margin-bottom: 6px;
+
+    }
+
+
+    .form-buttons {
+
+      display: grid;
+
+      grid-template-columns: 1fr 1fr;
+
+      gap: 10px;
+
+    }
+
+
+    .bottom-nav {
+
+      position: fixed;
+
+      bottom: 0;
+
+      left: 0;
+
+      right: 0;
+
+      height: 68px;
+
+      background: white;
+
+      border-top: 1px solid #e5e7eb;
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(4, 1fr);
+
+      z-index: 1000;
+
+      box-shadow:
+        0 -2px 10px
+        rgba(0,0,0,.08);
+
+    }
+
+
+    .bottom-nav button {
+
+      background: white;
+
+      color: #6b7280;
+
+      border-radius: 0;
+
+      padding: 5px;
+
+      font-size: 12px;
+
+    }
+
+
+    .bottom-nav button.active {
+
+      color: #166534;
+
+      font-weight: 900;
+
+    }
+
+
+    .recent p {
+
+      margin: 8px 0;
+
+      padding-bottom: 8px;
+
+      border-bottom:
+        1px solid #f0f0f0;
+
+      font-size: 14px;
+
+    }
+
+
+    @media (
+      min-width: 600px
+    ) {
+
+      .screen {
+
+        padding-top: 30px;
+
+      }
+
     }
 
   </style>
@@ -335,28 +719,30 @@
 <body>
 
 
-<header>
-
-  <h1>
-    🥫 Kitchen Inventory
-  </h1>
-
-  <p>
-    Know what you have. Know what you need.
-  </p>
-
-</header>
-
-
-<main>
-
-
+  <!-- ================================= -->
   <!-- HOME -->
+  <!-- ================================= -->
 
   <section
     id="home"
     class="screen active"
   >
+
+    <header>
+
+      <h1>
+        🥫 Kitchen Inventory
+      </h1>
+
+      <div class="subtitle">
+
+        Know what you have.
+        Know what you need.
+
+      </div>
+
+    </header>
+
 
     <div class="stats">
 
@@ -369,7 +755,7 @@
           0
         </div>
 
-        <div class="stat-label">
+        <div>
           Items in stock
         </div>
 
@@ -385,7 +771,7 @@
           0
         </div>
 
-        <div class="stat-label">
+        <div>
           Low stock
         </div>
 
@@ -394,14 +780,18 @@
     </div>
 
 
-    <button
-      class="primary scan-button"
-      onclick="showScreen('scan')"
-    >
+    <div class="card">
 
-      📷 SCAN GROCERY
+      <button
+        class="primary full-button"
+        onclick="showScreen('scan')"
+      >
 
-    </button>
+        📷 SCAN GROCERY
+
+      </button>
+
+    </div>
 
 
     <div class="card">
@@ -410,12 +800,14 @@
         Quick Add
       </h2>
 
-      <p>
+      <p class="instructions">
+
         Add something without scanning.
+
       </p>
 
       <button
-        class="secondary"
+        class="primary full-button"
         onclick="openAddProduct()"
       >
 
@@ -426,35 +818,56 @@
     </div>
 
 
-    <div class="card">
+    <div class="card recent">
 
       <h2>
         Recent Activity
       </h2>
 
-      <div id="recentActivity"></div>
+      <div id="recentActivity">
+
+        <div class="empty">
+          No activity yet.
+        </div>
+
+      </div>
 
     </div>
 
   </section>
 
 
-
+  <!-- ================================= -->
   <!-- SCANNER -->
+  <!-- ================================= -->
 
   <section
     id="scan"
     class="screen"
   >
 
+    <header>
+
+      <h1>
+        📷 Scan Product
+      </h1>
+
+      <div class="subtitle">
+
+        Scan groceries to update
+        your household inventory.
+
+      </div>
+
+    </header>
+
+
     <div class="card">
 
-      <h2>
-        📷 Scan Product
-      </h2>
 
+      <!-- ADD / REMOVE -->
 
-      <div class="mode">
+      <div class="mode-buttons">
 
         <button
           id="addMode"
@@ -479,13 +892,17 @@
       </div>
 
 
+      <!-- CAMERA -->
+
       <div id="reader"></div>
 
 
+      <!-- START CAMERA -->
+
       <button
         id="startScannerButton"
-        class="primary"
-        style="width:100%"
+        class="primary full-button"
+        style="margin-top:12px"
         onclick="startScanner()"
       >
 
@@ -494,17 +911,21 @@
       </button>
 
 
+      <!-- STOP CAMERA -->
+
       <button
         id="stopScannerButton"
-        class="danger hidden"
-        style="width:100%;margin-top:8px"
+        class="secondary full-button hidden"
+        style="margin-top:12px"
         onclick="stopScanner()"
       >
 
-        Stop Camera
+        ⏹ Stop Camera
 
       </button>
 
+
+      <!-- BASIC STATUS -->
 
       <div
         id="scanStatus"
@@ -516,29 +937,44 @@
       </div>
 
 
-      <div class="instructions">
+      <!-- ================================= -->
+      <!-- BIG ACKNOWLEDGEMENT -->
+      <!-- ================================= -->
 
-        <strong>ADD:</strong>
-        Scanning increases your inventory by 1.
-
-        <br><br>
-
-        <strong>REMOVE:</strong>
-        Scanning decreases your inventory by 1.
-
-        <br><br>
-
-        Point the camera at the barcode on your grocery product.
+      <div
+        id="scanConfirmation"
+        class="scan-confirmation hidden"
+      >
 
       </div>
 
 
-      <details style="margin-top:15px">
+      <div class="instructions">
 
-        <summary>
-          Enter barcode manually
-        </summary>
+        <strong>
+          ADD:
+        </strong>
 
+        Scanning increases your
+        inventory by 1.
+
+        <br><br>
+
+        <strong>
+          REMOVE:
+        </strong>
+
+        Scanning decreases your
+        inventory by 1.
+
+      </div>
+
+
+      <!-- MANUAL BARCODE -->
+
+      <div
+        class="manual-barcode"
+      >
 
         <input
           id="barcodeInput"
@@ -549,36 +985,40 @@
 
 
         <button
-          class="secondary"
-          style="width:100%"
+          class="primary"
           onclick="processBarcode()"
         >
 
-          Process Barcode
+          Process
 
         </button>
 
-      </details>
+      </div>
 
     </div>
 
   </section>
 
 
-
+  <!-- ================================= -->
   <!-- INVENTORY -->
+  <!-- ================================= -->
 
   <section
     id="inventory"
     class="screen"
   >
 
-    <div class="card">
+    <header>
 
-      <h2>
+      <h1>
         📦 Inventory
-      </h2>
+      </h1>
 
+    </header>
+
+
+    <div class="card">
 
       <input
         id="searchInput"
@@ -587,6 +1027,7 @@
         oninput="renderInventory()"
       >
 
+      <br><br>
 
       <select
         id="categoryFilter"
@@ -599,38 +1040,50 @@
 
       </select>
 
+    </div>
 
-      <div id="inventoryList"></div>
+
+    <div
+      id="inventoryList"
+    >
+
+      <div class="empty">
+        No products yet.
+      </div>
 
     </div>
 
   </section>
 
 
-
-  <!-- SHOPPING -->
+  <!-- ================================= -->
+  <!-- SHOPPING LIST -->
+  <!-- ================================= -->
 
   <section
     id="shopping"
     class="screen"
   >
 
+    <header>
+
+      <h1>
+        🛒 Shopping List
+      </h1>
+
+    </header>
+
+
     <div class="card">
 
-      <h2>
-        🛒 Shopping List
-      </h2>
-
-
       <div
-        style="display:flex;gap:8px"
+        class="manual-barcode"
       >
 
         <input
           id="shoppingInput"
           type="text"
           placeholder="Add item..."
-          style="margin-bottom:0"
         >
 
 
@@ -650,7 +1103,7 @@
 
 
       <button
-        class="secondary"
+        class="secondary full-button"
         onclick="addLowStockToShopping()"
       >
 
@@ -658,247 +1111,247 @@
 
       </button>
 
+    </div>
 
-      <div id="shoppingList"></div>
+
+    <div
+      id="shoppingList"
+    >
+
+      <div class="empty">
+        Shopping list is empty.
+      </div>
 
     </div>
 
   </section>
 
 
-
+  <!-- ================================= -->
   <!-- ADD PRODUCT -->
+  <!-- ================================= -->
 
   <section
     id="addProduct"
     class="screen"
   >
 
+    <header>
+
+      <h1>
+        ➕ Add Product
+      </h1>
+
+    </header>
+
+
     <div class="card">
 
-      <h2>
-        ➕ Add Product
-      </h2>
+
+      <div class="form-group">
+
+        <label>
+          Product Name
+        </label>
+
+        <input
+          id="newName"
+          type="text"
+          placeholder="Example: Milk"
+        >
+
+      </div>
 
 
-      <label>
-        Product Name
-      </label>
+      <div class="form-group">
 
-      <input
-        id="newName"
-        type="text"
-        placeholder="Example: Milk"
-      >
+        <label>
+          Barcode
+        </label>
 
+        <input
+          id="newBarcode"
+          type="text"
+          inputmode="numeric"
+          placeholder="Optional"
+        >
 
-      <label>
-        Barcode
-      </label>
-
-      <input
-        id="newBarcode"
-        type="text"
-        inputmode="numeric"
-        placeholder="Optional"
-      >
+      </div>
 
 
-      <label>
-        Category
-      </label>
+      <div class="form-group">
 
-      <select id="newCategory">
+        <label>
+          Category
+        </label>
 
-        <option>
-          Produce
-        </option>
+        <select
+          id="newCategory"
+        >
 
-        <option>
-          Meat
-        </option>
+          <option>
+            Dairy
+          </option>
 
-        <option>
-          Dairy
-        </option>
+          <option>
+            Meat
+          </option>
 
-        <option>
-          Eggs
-        </option>
+          <option>
+            Produce
+          </option>
 
-        <option>
-          Frozen
-        </option>
+          <option>
+            Pantry
+          </option>
 
-        <option>
-          Canned Goods
-        </option>
+          <option>
+            Frozen
+          </option>
 
-        <option>
-          Dry Goods
-        </option>
+          <option>
+            Beverages
+          </option>
 
-        <option>
-          Bread
-        </option>
+          <option>
+            Snacks
+          </option>
 
-        <option>
-          Snacks
-        </option>
+          <option>
+            Other
+          </option>
 
-        <option>
-          Drinks
-        </option>
+        </select>
 
-        <option>
-          Seasonings
-        </option>
-
-        <option>
-          Baking
-        </option>
-
-        <option>
-          Sauces & Condiments
-        </option>
-
-        <option>
-          Other
-        </option>
-
-      </select>
+      </div>
 
 
-      <label>
-        Starting Quantity
-      </label>
+      <div class="form-group">
 
-      <input
-        id="newQuantity"
-        type="number"
-        min="0"
-        value="1"
-      >
+        <label>
+          Starting Quantity
+        </label>
 
+        <input
+          id="newQuantity"
+          type="number"
+          min="0"
+          value="1"
+        >
 
-      <label>
-        Minimum Stock
-      </label>
-
-      <input
-        id="newMinimum"
-        type="number"
-        min="0"
-        value="1"
-      >
+      </div>
 
 
-      <button
-        class="primary"
-        onclick="saveNewProduct()"
-      >
+      <div class="form-group">
 
-        Save Product
+        <label>
+          Minimum Stock
+        </label>
 
-      </button>
+        <input
+          id="newMinimum"
+          type="number"
+          min="0"
+          value="1"
+        >
+
+      </div>
 
 
-      <button
-        class="secondary"
-        onclick="showScreen('home')"
-        style="margin-left:6px"
-      >
+      <div class="form-buttons">
 
-        Cancel
+        <button
+          class="primary"
+          onclick="saveNewProduct()"
+        >
 
-      </button>
+          Save Product
+
+        </button>
+
+
+        <button
+          class="secondary"
+          onclick="showScreen('inventory')"
+        >
+
+          Cancel
+
+        </button>
+
+      </div>
 
     </div>
 
   </section>
 
 
-</main>
+  <!-- ================================= -->
+  <!-- BOTTOM NAVIGATION -->
+  <!-- ================================= -->
 
+  <nav class="bottom-nav">
 
+    <button
+      data-screen="home"
+      class="active"
+      onclick="showScreen('home')"
+    >
 
-<!-- BOTTOM NAVIGATION -->
-
-<nav class="bottom-nav">
-
-
-  <button
-    onclick="showScreen('home')"
-    data-screen="home"
-  >
-
-    <span class="big-icon">
       🏠
-    </span>
+      <br>
+      Home
 
-    Home
-
-  </button>
+    </button>
 
 
-  <button
-    onclick="showScreen('scan')"
-    data-screen="scan"
-  >
+    <button
+      data-screen="scan"
+      onclick="showScreen('scan')"
+    >
 
-    <span class="big-icon">
       📷
-    </span>
+      <br>
+      Scan
 
-    Scan
-
-  </button>
+    </button>
 
 
-  <button
-    onclick="showScreen('inventory')"
-    data-screen="inventory"
-  >
+    <button
+      data-screen="inventory"
+      onclick="showScreen('inventory')"
+    >
 
-    <span class="big-icon">
       📦
-    </span>
+      <br>
+      Inventory
 
-    Inventory
-
-  </button>
+    </button>
 
 
-  <button
-    onclick="showScreen('shopping')"
-    data-screen="shopping"
-  >
+    <button
+      data-screen="shopping"
+      onclick="showScreen('shopping')"
+    >
 
-    <span class="big-icon">
       🛒
-    </span>
+      <br>
+      Shopping
 
-    Shopping
+    </button>
 
-  </button>
-
-
-</nav>
+  </nav>
 
 
+  <!-- ================================= -->
+  <!-- APPLICATION JAVASCRIPT -->
+  <!-- ================================= -->
 
-<!-- BARCODE SCANNER LIBRARY -->
-
-<script
-  src="https://unpkg.com/html5-qrcode"
-  type="text/javascript"
-></script>
-
-
-<!-- OUR APP -->
-
-<script src="app.js"></script>
+  <script
+    src="app.js"
+  ></script>
 
 
 </body>
+
 </html>
