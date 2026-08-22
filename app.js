@@ -1,45 +1,44 @@
+// ==========================================
+// HOUSEHOLD INVENTORY APP
+// ==========================================
+
 const STORAGE_KEY = "kitchenInventoryV1";
-const SHOPPING_KEY = "kitchenShoppingV1";
 const ACTIVITY_KEY = "kitchenActivityV1";
-
-
-// ==========================================
-// DATA
-// ==========================================
+const SHOPPING_KEY = "kitchenShoppingV1";
 
 let inventory = JSON.parse(
   localStorage.getItem(STORAGE_KEY) || "[]"
-);
-
-let shopping = JSON.parse(
-  localStorage.getItem(SHOPPING_KEY) || "[]"
 );
 
 let activity = JSON.parse(
   localStorage.getItem(ACTIVITY_KEY) || "[]"
 );
 
+let shopping = JSON.parse(
+  localStorage.getItem(SHOPPING_KEY) || "[]"
+);
+
 
 // ==========================================
-// SCANNER STATE
+// SCANNER VARIABLES
 // ==========================================
 
-let mode = "add";
-
-let html5QrCode = null;
+let scanner = null;
 
 let scannerRunning = false;
 
-let lastScannedCode = null;
+let mode = "add";
 
-let lastScanTime = 0;
+let lastBarcode = "";
+
+let lastBarcodeTime = 0;
 
 
 // ==========================================
-// SAVE DATA
+// SAVE
 // ==========================================
 
-function save() {
+function saveData() {
 
   localStorage.setItem(
     STORAGE_KEY,
@@ -47,26 +46,26 @@ function save() {
   );
 
   localStorage.setItem(
-    SHOPPING_KEY,
-    JSON.stringify(shopping)
+    ACTIVITY_KEY,
+    JSON.stringify(activity)
   );
 
   localStorage.setItem(
-    ACTIVITY_KEY,
-    JSON.stringify(activity)
+    SHOPPING_KEY,
+    JSON.stringify(shopping)
   );
 
 }
 
 
 // ==========================================
-// SCREEN NAVIGATION
+// NAVIGATION
 // ==========================================
 
-function showScreen(id) {
+function showScreen(screenName) {
 
   if (
-    id !== "scan" &&
+    screenName !== "scan" &&
     scannerRunning
   ) {
 
@@ -79,49 +78,64 @@ function showScreen(id) {
     .querySelectorAll(".screen")
     .forEach(screen => {
 
-      screen.classList.remove("active");
-
-    });
-
-
-  const screen =
-    document.getElementById(id);
-
-
-  if (screen) {
-
-    screen.classList.add("active");
-
-  }
-
-
-  document
-    .querySelectorAll(".bottom-nav button")
-    .forEach(button => {
-
-      button.classList.toggle(
-        "active",
-        button.dataset.screen === id
+      screen.classList.remove(
+        "active"
       );
 
     });
 
 
-  if (id === "home") {
+  const screen =
+    document.getElementById(
+      screenName
+    );
+
+
+  if (screen) {
+
+    screen.classList.add(
+      "active"
+    );
+
+  }
+
+
+  document
+    .querySelectorAll(
+      ".bottom-nav button"
+    )
+    .forEach(button => {
+
+      button.classList.toggle(
+        "active",
+        button.dataset.screen ===
+          screenName
+      );
+
+    });
+
+
+  if (
+    screenName === "home"
+  ) {
 
     renderHome();
 
   }
 
 
-  if (id === "inventory") {
+  if (
+    screenName === "inventory"
+  ) {
 
     renderInventory();
 
   }
 
 
-  if (id === "shopping") {
+  if (
+    screenName === "shopping"
+  ) {
 
     renderShopping();
 
@@ -131,7 +145,7 @@ function showScreen(id) {
 
 
 // ==========================================
-// ADD / REMOVE MODE
+// ADD / REMOVE
 // ==========================================
 
 function setMode(newMode) {
@@ -140,33 +154,41 @@ function setMode(newMode) {
 
 
   const addButton =
-    document.getElementById("addMode");
+    document.getElementById(
+      "addMode"
+    );
 
   const removeButton =
-    document.getElementById("removeMode");
+    document.getElementById(
+      "removeMode"
+    );
 
 
-  if (!addButton || !removeButton) {
+  if (
+    !addButton ||
+    !removeButton
+  ) {
 
     return;
 
   }
 
 
-  if (newMode === "add") {
+  addButton.className = "";
+
+  removeButton.className = "";
+
+
+  if (
+    newMode === "add"
+  ) {
 
     addButton.className =
       "selected-add";
 
-    removeButton.className =
-      "";
-
   }
 
   else {
-
-    addButton.className =
-      "";
 
     removeButton.className =
       "selected-remove";
@@ -177,12 +199,14 @@ function setMode(newMode) {
 
 
 // ==========================================
-// START CAMERA
+// START SCANNER
 // ==========================================
 
 function startScanner() {
 
-  if (scannerRunning) {
+  if (
+    scannerRunning
+  ) {
 
     return;
 
@@ -195,8 +219,7 @@ function startScanner() {
   ) {
 
     alert(
-      "The barcode scanner library did not load. " +
-      "Please refresh the page and try again."
+      "Barcode scanner library did not load."
     );
 
     return;
@@ -205,13 +228,15 @@ function startScanner() {
 
 
   const reader =
-    document.getElementById("reader");
+    document.getElementById(
+      "reader"
+    );
 
 
   if (!reader) {
 
     alert(
-      "The scanner area could not be found."
+      "Scanner area not found."
     );
 
     return;
@@ -219,22 +244,15 @@ function startScanner() {
   }
 
 
-  const status =
-    document.getElementById(
-      "scanStatus"
+  setScanStatus(
+    "Starting camera..."
+  );
+
+
+  scanner =
+    new Html5Qrcode(
+      "reader"
     );
-
-
-  status.className =
-    "scan-status";
-
-
-  status.textContent =
-    "Starting camera...";
-
-
-  html5QrCode =
-    new Html5Qrcode("reader");
 
 
   const config = {
@@ -242,29 +260,31 @@ function startScanner() {
     fps: 10,
 
     qrbox: {
-
       width: 280,
-
       height: 140
-
-    },
-
-    aspectRatio: 1.777778
+    }
 
   };
 
 
-  html5QrCode.start(
+  scanner.start(
 
     {
-      facingMode: "environment"
+      facingMode:
+        "environment"
     },
 
     config,
 
     function(decodedText) {
 
-      handleBarcodeScan(
+      console.log(
+        "BARCODE DETECTED:",
+        decodedText
+      );
+
+
+      handleBarcode(
         decodedText
       );
 
@@ -272,11 +292,7 @@ function startScanner() {
 
     function(errorMessage) {
 
-      // Normal scanning attempts
-      // produce messages while the
-      // camera searches for a barcode.
-      //
-      // We intentionally ignore them.
+      // Ignore normal scanning errors.
 
     }
 
@@ -292,7 +308,7 @@ function startScanner() {
       .getElementById(
         "startScannerButton"
       )
-      .classList
+      ?.classList
       .add("hidden");
 
 
@@ -300,30 +316,30 @@ function startScanner() {
       .getElementById(
         "stopScannerButton"
       )
-      .classList
+      ?.classList
       .remove("hidden");
 
 
-    status.textContent =
-      "Ready — point camera at barcode.";
+    setScanStatus(
+      "Ready — point the camera at a barcode."
+    );
 
   })
 
   .catch(function(error) {
 
     console.error(
-      "Camera error:",
       error
     );
 
 
-    status.textContent =
-      "Camera could not start.";
+    setScanStatus(
+      "Camera could not start."
+    );
 
 
     alert(
-      "The camera could not be started.\n\n" +
-      "Please make sure you allowed camera access."
+      "Camera could not start. Please check camera permissions."
     );
 
   });
@@ -335,23 +351,24 @@ function startScanner() {
 // BARCODE DETECTED
 // ==========================================
 
-function handleBarcodeScan(barcode) {
+function handleBarcode(
+  barcode
+) {
 
   const now =
     Date.now();
 
 
-  // Prevent duplicate scans.
-  // The same barcode cannot be processed
-  // again for two seconds.
+  // Prevent the same barcode
+  // from being processed repeatedly.
 
   if (
 
     barcode ===
-      lastScannedCode &&
+      lastBarcode &&
 
     now -
-      lastScanTime <
+      lastBarcodeTime <
       2000
 
   ) {
@@ -361,14 +378,14 @@ function handleBarcodeScan(barcode) {
   }
 
 
-  lastScannedCode =
+  lastBarcode =
     barcode;
 
-  lastScanTime =
+  lastBarcodeTime =
     now;
 
 
-  processScannedBarcode(
+  processBarcodeScan(
     barcode
   );
 
@@ -376,12 +393,18 @@ function handleBarcodeScan(barcode) {
 
 
 // ==========================================
-// PROCESS BARCODE
+// PROCESS SCAN
 // ==========================================
 
-function processScannedBarcode(
+function processBarcodeScan(
   barcode
 ) {
+
+  console.log(
+    "PROCESSING BARCODE:",
+    barcode
+  );
+
 
   let product =
     inventory.find(
@@ -402,15 +425,9 @@ function processScannedBarcode(
 
     const name =
       prompt(
-
-        "NEW PRODUCT\n\n" +
-
-        "Barcode:\n" +
-
+        "NEW PRODUCT\n\nBarcode: " +
         barcode +
-
-        "\n\nEnter the product name:"
-
+        "\n\nEnter product name:"
       );
 
 
@@ -421,30 +438,6 @@ function processScannedBarcode(
       return;
 
     }
-
-
-    const category =
-      prompt(
-
-        "Product category:",
-
-        "Other"
-
-      ) || "Other";
-
-
-    const minimum =
-      Number(
-
-        prompt(
-
-          "Minimum stock level:",
-
-          "1"
-
-        )
-
-      ) || 0;
 
 
     product = {
@@ -459,13 +452,13 @@ function processScannedBarcode(
         name.trim(),
 
       category:
-        category.trim(),
+        "Other",
 
       quantity:
         0,
 
       minimum:
-        minimum
+        1
 
     };
 
@@ -475,7 +468,7 @@ function processScannedBarcode(
     );
 
 
-    save();
+    saveData();
 
   }
 
@@ -484,9 +477,13 @@ function processScannedBarcode(
   // ADD
   // ========================================
 
-  if (mode === "add") {
+  if (
+    mode === "add"
+  ) {
 
-    product.quantity += 1;
+    product.quantity =
+      Number(product.quantity) +
+      1;
 
 
     logActivity(
@@ -495,30 +492,34 @@ function processScannedBarcode(
     );
 
 
-    save();
+    saveData();
 
 
-    renderHome();
+    // THIS IS THE IMPORTANT PART
+    // SHOW ACKNOWLEDGEMENT IMMEDIATELY
 
-    renderInventory();
+    showAcknowledgement(
 
-
-    showScanConfirmation(
-
-      "ITEM ADDED",
+      "ADDED",
 
       product.name,
 
       product.quantity,
 
-      "scan-success"
+      "added"
 
     );
 
 
-    beep(
-      "success"
-    );
+    beep();
+
+
+    vibrate();
+
+
+    renderHome();
+
+    renderInventory();
 
   }
 
@@ -530,48 +531,10 @@ function processScannedBarcode(
   else {
 
     if (
-      product.quantity > 0
+      product.quantity <= 0
     ) {
 
-      product.quantity -= 1;
-
-
-      logActivity(
-        "Removed " +
-        product.name
-      );
-
-
-      save();
-
-
-      renderHome();
-
-      renderInventory();
-
-
-      showScanConfirmation(
-
-        "ITEM REMOVED",
-
-        product.name,
-
-        product.quantity,
-
-        "scan-removed"
-
-      );
-
-
-      beep(
-        "remove"
-      );
-
-    }
-
-    else {
-
-      showScanConfirmation(
+      showAcknowledgement(
 
         "OUT OF STOCK",
 
@@ -579,16 +542,58 @@ function processScannedBarcode(
 
         0,
 
-        "scan-warning"
-
-      );
-
-
-      beep(
         "warning"
+
       );
+
+
+      beepWarning();
+
+
+      vibrateWarning();
+
+
+      return;
 
     }
+
+
+    product.quantity =
+      Number(product.quantity) -
+      1;
+
+
+    logActivity(
+      "Removed " +
+      product.name
+    );
+
+
+    saveData();
+
+
+    showAcknowledgement(
+
+      "REMOVED",
+
+      product.name,
+
+      product.quantity,
+
+      "removed"
+
+    );
+
+
+    beepRemove();
+
+
+    vibrate();
+
+
+    renderHome();
+
+    renderInventory();
 
   }
 
@@ -596,10 +601,10 @@ function processScannedBarcode(
 
 
 // ==========================================
-// SCAN ACKNOWLEDGEMENT
+// ACKNOWLEDGEMENT
 // ==========================================
 
-function showScanConfirmation(
+function showAcknowledgement(
 
   action,
 
@@ -607,63 +612,92 @@ function showScanConfirmation(
 
   quantity,
 
-  cssClass
+  type
 
 ) {
 
-  const status =
+  console.log(
+    "SHOW ACKNOWLEDGEMENT:",
+    action,
+    productName,
+    quantity
+  );
+
+
+  const box =
     document.getElementById(
-      "scanStatus"
+      "scanConfirmation"
     );
 
 
-  if (!status) {
+  if (!box) {
+
+    console.error(
+      "scanConfirmation element NOT FOUND"
+    );
+
+
+    // Emergency fallback
+
+    alert(
+
+      action +
+      "\n\n" +
+      productName +
+      "\n\nQuantity: " +
+      quantity
+
+    );
+
 
     return;
 
   }
 
 
-  status.className =
-    "scan-status " +
-    cssClass;
+  box.className =
+    "scan-confirmation " +
+    type;
 
 
-  status.innerHTML = `
+  box.innerHTML = `
 
-    <div
-      style="
-        font-size:24px;
-        font-weight:900;
-        margin-bottom:6px;
-      "
-    >
+    <div class="confirmation-action">
 
-      ${escapeHTML(action)}
+      ${
+        type === "added"
+          ? "✅ ITEM ADDED"
+          : ""
+      }
 
-    </div>
+      ${
+        type === "removed"
+          ? "🔴 ITEM REMOVED"
+          : ""
+      }
 
-
-    <div
-      style="
-        font-size:18px;
-        font-weight:700;
-      "
-    >
-
-      ${escapeHTML(productName)}
+      ${
+        type === "warning"
+          ? "⚠️ OUT OF STOCK"
+          : ""
+      }
 
     </div>
 
 
-    <div
-      style="
-        font-size:16px;
-        margin-top:4px;
-      "
-    >
+    <div class="confirmation-product">
+
+      ${escapeHTML(
+        productName
+      )}
+
+    </div>
+
+
+    <div class="confirmation-quantity">
 
       Quantity:
+
       <strong>
         ${quantity}
       </strong>
@@ -673,68 +707,115 @@ function showScanConfirmation(
   `;
 
 
-  // ========================================
-  // PHONE VIBRATION
-  // ========================================
+  // Make sure it is visible.
 
-  if (
-    "vibrate" in navigator
-  ) {
+  box.classList.remove(
+    "hidden"
+  );
 
-    if (
-      cssClass ===
-      "scan-warning"
-    ) {
 
-      navigator.vibrate(
-        [100, 80, 100]
+  // Scroll acknowledgement
+  // into view on phone.
+
+  box.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+
+
+  // Leave acknowledgement
+  // visible for 2.5 seconds.
+
+  setTimeout(
+    function() {
+
+      box.classList.add(
+        "hidden"
       );
 
-    }
+    },
 
-    else {
+    2500
 
-      navigator.vibrate(
-        120
-      );
-
-    }
-
-  }
-
-
-  // ========================================
-  // RETURN TO READY MESSAGE
-  // ========================================
-
-  setTimeout(function() {
-
-    if (
-      !scannerRunning
-    ) {
-
-      return;
-
-    }
-
-
-    status.className =
-      "scan-status";
-
-
-    status.textContent =
-      "✓ Ready for next barcode.";
-
-  }, 1800);
+  );
 
 }
 
 
 // ==========================================
-// BEEP
+// STATUS
 // ==========================================
 
-function beep(type) {
+function setScanStatus(
+  message
+) {
+
+  const status =
+    document.getElementById(
+      "scanStatus"
+    );
+
+
+  if (status) {
+
+    status.textContent =
+      message;
+
+  }
+
+}
+
+
+// ==========================================
+// BEEP - ADD
+// ==========================================
+
+function beep() {
+
+  playTone(
+    850,
+    0.18
+  );
+
+}
+
+
+// ==========================================
+// BEEP - REMOVE
+// ==========================================
+
+function beepRemove() {
+
+  playTone(
+    550,
+    0.18
+  );
+
+}
+
+
+// ==========================================
+// BEEP - WARNING
+// ==========================================
+
+function beepWarning() {
+
+  playTone(
+    300,
+    0.3
+  );
+
+}
+
+
+// ==========================================
+// PLAY TONE
+// ==========================================
+
+function playTone(
+  frequency,
+  duration
+) {
 
   try {
 
@@ -750,16 +831,16 @@ function beep(type) {
     }
 
 
-    const audioContext =
+    const context =
       new AudioContext();
 
 
     const oscillator =
-      audioContext.createOscillator();
+      context.createOscillator();
 
 
     const gain =
-      audioContext.createGain();
+      context.createGain();
 
 
     oscillator.connect(
@@ -768,32 +849,8 @@ function beep(type) {
 
 
     gain.connect(
-      audioContext.destination
+      context.destination
     );
-
-
-    let frequency =
-      800;
-
-
-    if (
-      type === "remove"
-    ) {
-
-      frequency =
-        550;
-
-    }
-
-
-    if (
-      type === "warning"
-    ) {
-
-      frequency =
-        300;
-
-    }
 
 
     oscillator.frequency.value =
@@ -806,19 +863,21 @@ function beep(type) {
 
     gain.gain.setValueAtTime(
       0.001,
-      audioContext.currentTime
+      context.currentTime
     );
 
 
     gain.gain.exponentialRampToValueAtTime(
       0.25,
-      audioContext.currentTime + 0.01
+      context.currentTime +
+        0.01
     );
 
 
     gain.gain.exponentialRampToValueAtTime(
       0.001,
-      audioContext.currentTime + 0.18
+      context.currentTime +
+        duration
     );
 
 
@@ -826,17 +885,16 @@ function beep(type) {
 
 
     oscillator.stop(
-      audioContext.currentTime +
-      0.18
+      context.currentTime +
+        duration
     );
-
 
   }
 
-  catch (error) {
+  catch(error) {
 
     console.log(
-      "Audio acknowledgement unavailable."
+      "Audio unavailable"
     );
 
   }
@@ -845,13 +903,51 @@ function beep(type) {
 
 
 // ==========================================
-// STOP CAMERA
+// VIBRATION
+// ==========================================
+
+function vibrate() {
+
+  if (
+    navigator.vibrate
+  ) {
+
+    navigator.vibrate(
+      120
+    );
+
+  }
+
+}
+
+
+function vibrateWarning() {
+
+  if (
+    navigator.vibrate
+  ) {
+
+    navigator.vibrate(
+      [
+        100,
+        80,
+        100
+      ]
+    );
+
+  }
+
+}
+
+
+// ==========================================
+// STOP SCANNER
 // ==========================================
 
 function stopScanner() {
 
   if (
-    !html5QrCode ||
+    !scanner ||
     !scannerRunning
   ) {
 
@@ -860,72 +956,44 @@ function stopScanner() {
   }
 
 
-  html5QrCode
-
+  scanner
     .stop()
 
     .then(function() {
 
-      html5QrCode.clear();
+      scanner.clear();
 
 
       scannerRunning =
         false;
 
 
-      const startButton =
-        document.getElementById(
+      document
+        .getElementById(
           "startScannerButton"
-        );
+        )
+        ?.classList
+        .remove("hidden");
 
 
-      const stopButton =
-        document.getElementById(
+      document
+        .getElementById(
           "stopScannerButton"
-        );
+        )
+        ?.classList
+        .add("hidden");
 
 
-      if (startButton) {
-
-        startButton
-          .classList
-          .remove("hidden");
-
-      }
-
-
-      if (stopButton) {
-
-        stopButton
-          .classList
-          .add("hidden");
-
-      }
-
-
-      const status =
-        document.getElementById(
-          "scanStatus"
-        );
-
-
-      if (status) {
-
-        status.className =
-          "scan-status";
-
-
-        status.textContent =
-          "Camera is off.";
-
-      }
+      setScanStatus(
+        "Camera is off."
+      );
 
     })
 
     .catch(function(error) {
 
-      console.error(
-        "Error stopping scanner:",
+      console.log(
+        "Scanner stop error:",
         error
       );
 
@@ -960,7 +1028,7 @@ function processBarcode() {
   if (!barcode) {
 
     alert(
-      "Please enter a barcode."
+      "Enter a barcode first."
     );
 
     return;
@@ -968,7 +1036,7 @@ function processBarcode() {
   }
 
 
-  processScannedBarcode(
+  handleBarcode(
     barcode
   );
 
@@ -979,40 +1047,21 @@ function processBarcode() {
 
 
 // ==========================================
-// ADD PRODUCT SCREEN
+// ADD PRODUCT
 // ==========================================
 
 function openAddProduct() {
-
-  document.getElementById(
-    "newName"
-  ).value = "";
-
-
-  document.getElementById(
-    "newBarcode"
-  ).value = "";
-
-
-  document.getElementById(
-    "newQuantity"
-  ).value = 1;
-
-
-  document.getElementById(
-    "newMinimum"
-  ).value = 1;
-
 
   showScreen(
     "addProduct"
   );
 
+
 }
 
 
 // ==========================================
-// SAVE NEW PRODUCT
+// SAVE PRODUCT
 // ==========================================
 
 function saveNewProduct() {
@@ -1020,7 +1069,7 @@ function saveNewProduct() {
   const name =
     document.getElementById(
       "newName"
-    ).value.trim();
+    )?.value.trim();
 
 
   if (!name) {
@@ -1037,105 +1086,63 @@ function saveNewProduct() {
   const barcode =
     document.getElementById(
       "newBarcode"
-    ).value.trim();
+    )?.value.trim() ||
+    "";
 
 
   const category =
     document.getElementById(
       "newCategory"
-    ).value;
+    )?.value ||
+    "Other";
 
 
   const quantity =
     Number(
-
       document.getElementById(
         "newQuantity"
-      ).value
-
+      )?.value
     ) || 0;
 
 
   const minimum =
     Number(
-
       document.getElementById(
         "newMinimum"
-      ).value
-
-    ) || 0;
-
-
-  const existing =
-    barcode
-
-      ? inventory.find(
-          item =>
-            item.barcode ===
-            barcode
-        )
-
-      : null;
+      )?.value
+    ) || 1;
 
 
-  if (existing) {
+  inventory.push({
 
-    existing.quantity +=
-      quantity;
+    id:
+      createID(),
 
-    existing.minimum =
-      minimum;
+    barcode:
+      barcode,
 
+    name:
+      name,
 
-    logActivity(
+    category:
+      category,
 
-      "Added " +
-      quantity +
-      " " +
-      existing.name
+    quantity:
+      quantity,
 
-    );
+    minimum:
+      minimum
 
-  }
-
-  else {
-
-    inventory.push({
-
-      id:
-        createID(),
-
-      barcode:
-        barcode,
-
-      name:
-        name,
-
-      category:
-        category,
-
-      quantity:
-        quantity,
-
-      minimum:
-        minimum
-
-    });
+  });
 
 
-    logActivity(
-
-      "Added " +
-      quantity +
-      " " +
-      name
-
-    );
-
-  }
+  logActivity(
+    "Added " +
+    name
+  );
 
 
-  save();
+  saveData();
 
 
   showScreen(
@@ -1168,50 +1175,24 @@ function changeQuantity(
   }
 
 
-  const oldQuantity =
-    product.quantity;
-
-
   product.quantity =
     Math.max(
-
       0,
-
-      product.quantity +
+      Number(product.quantity) +
       amount
-
     );
 
 
-  if (
-    product.quantity !==
-    oldQuantity
-  ) {
+  logActivity(
 
-    if (
-      amount > 0
-    ) {
+    amount > 0
+      ? "Added " + product.name
+      : "Removed " + product.name
 
-      logActivity(
-        "Added " +
-        product.name
-      );
-
-    }
-
-    else {
-
-      logActivity(
-        "Removed " +
-        product.name
-      );
-
-    }
-
-  }
+  );
 
 
-  save();
+  saveData();
 
 
   renderHome();
@@ -1222,7 +1203,7 @@ function changeQuantity(
 
 
 // ==========================================
-// DELETE PRODUCT
+// DELETE
 // ==========================================
 
 function deleteProduct(
@@ -1245,11 +1226,9 @@ function deleteProduct(
 
   if (
     !confirm(
-
       "Delete " +
       product.name +
-      " from inventory?"
-
+      "?"
     )
   ) {
 
@@ -1265,12 +1244,12 @@ function deleteProduct(
     );
 
 
-  save();
+  saveData();
 
-
-  renderHome();
 
   renderInventory();
+
+  renderHome();
 
 }
 
@@ -1284,8 +1263,14 @@ function renderHome() {
   const total =
     inventory.reduce(
 
-      (sum, item) =>
-        sum + item.quantity,
+      function(sum, item) {
+
+        return (
+          sum +
+          Number(item.quantity)
+        );
+
+      },
 
       0
 
@@ -1296,8 +1281,8 @@ function renderHome() {
     inventory.filter(
 
       item =>
-        item.quantity <=
-        item.minimum
+        Number(item.quantity) <=
+        Number(item.minimum)
 
     ).length;
 
@@ -1344,7 +1329,7 @@ function renderHome() {
 
 
   if (
-    !activity.length
+    activity.length === 0
   ) {
 
     recent.innerHTML =
@@ -1357,15 +1342,12 @@ function renderHome() {
 
   recent.innerHTML =
     activity
-      .slice(0, 8)
+      .slice(0, 10)
       .map(
-
         item =>
-
           `<p>${escapeHTML(
             item
           )}</p>`
-
       )
       .join("");
 
@@ -1391,55 +1373,46 @@ function renderInventory() {
   }
 
 
-  const searchElement =
-    document.getElementById(
-      "searchInput"
-    );
-
-
-  const categoryElement =
-    document.getElementById(
-      "categoryFilter"
-    );
-
-
   const search =
     (
-      searchElement?.value ||
+      document.getElementById(
+        "searchInput"
+      )?.value ||
       ""
     )
       .toLowerCase();
 
 
   const category =
-    categoryElement?.value ||
+    document.getElementById(
+      "categoryFilter"
+    )?.value ||
     "all";
-
-
-  updateCategoryFilter();
 
 
   const filtered =
     inventory.filter(
       item => {
 
-        const matchesSearch =
-
+        const matchesName =
           item.name
             .toLowerCase()
-            .includes(search);
+            .includes(
+              search
+            );
 
 
         const matchesCategory =
 
-          category === "all" ||
+          category ===
+            "all" ||
 
           item.category ===
             category;
 
 
         return (
-          matchesSearch &&
+          matchesName &&
           matchesCategory
         );
 
@@ -1448,7 +1421,7 @@ function renderInventory() {
 
 
   if (
-    !filtered.length
+    filtered.length === 0
   ) {
 
     list.innerHTML =
@@ -1462,25 +1435,20 @@ function renderInventory() {
   list.innerHTML =
     filtered
       .map(
-
         item => {
 
-          const isLow =
-            item.quantity <=
-            item.minimum;
+          const low =
+            Number(item.quantity) <=
+            Number(item.minimum);
 
 
           return `
 
             <div class="product">
 
-              <div
-                style="flex:1"
-              >
+              <div style="flex:1">
 
-                <div
-                  class="product-name"
-                >
+                <div class="product-name">
 
                   ${escapeHTML(
                     item.name
@@ -1489,20 +1457,16 @@ function renderInventory() {
                 </div>
 
 
-                <div
-                  class="product-meta"
-                >
+                <div class="product-meta">
 
                   ${escapeHTML(
                     item.category
                   )}
 
                   ${
-                    isLow
-
+                    low
                       ? ' • <span class="low">LOW</span>'
-
-                      : ''
+                      : ""
                   }
 
                 </div>
@@ -1510,9 +1474,7 @@ function renderInventory() {
               </div>
 
 
-              <div
-                class="qty-buttons"
-              >
+              <div class="qty-buttons">
 
                 <button
                   class="secondary"
@@ -1525,9 +1487,7 @@ function renderInventory() {
                 </button>
 
 
-                <div
-                  class="quantity"
-                >
+                <div class="quantity">
 
                   ${item.quantity}
 
@@ -1561,7 +1521,6 @@ function renderInventory() {
           `;
 
         }
-
       )
       .join("");
 
@@ -1569,85 +1528,7 @@ function renderInventory() {
 
 
 // ==========================================
-// CATEGORY FILTER
-// ==========================================
-
-function updateCategoryFilter() {
-
-  const select =
-    document.getElementById(
-      "categoryFilter"
-    );
-
-
-  if (!select) {
-
-    return;
-
-  }
-
-
-  const current =
-    select.value;
-
-
-  const categories =
-    [
-      ...new Set(
-
-        inventory.map(
-          item =>
-            item.category
-        )
-
-      )
-
-    ]
-      .filter(Boolean)
-      .sort();
-
-
-  select.innerHTML =
-
-    `<option value="all">
-      All Categories
-    </option>` +
-
-    categories
-      .map(
-
-        category =>
-
-          `<option
-            value="${escapeHTML(
-              category
-            )}"
-          >
-            ${escapeHTML(
-              category
-            )}
-          </option>`
-
-      )
-      .join("");
-
-
-  if (
-    categories.includes(
-      current
-    )
-  ) {
-
-    select.value =
-      current;
-
-  }
-
-}
-
-
-// ==========================================
-// SHOPPING LIST
+// SHOPPING
 // ==========================================
 
 function addShoppingItem() {
@@ -1658,15 +1539,8 @@ function addShoppingItem() {
     );
 
 
-  if (!input) {
-
-    return;
-
-  }
-
-
   const name =
-    input.value.trim();
+    input?.value.trim();
 
 
   if (!name) {
@@ -1694,74 +1568,9 @@ function addShoppingItem() {
     "";
 
 
-  save();
-
-
-  renderShopping();
-
-}
-
-
-function addLowStockToShopping() {
-
-  const lowStock =
-    inventory.filter(
-
-      item =>
-        item.quantity <=
-        item.minimum
-
-    );
-
-
-  lowStock.forEach(
-    item => {
-
-      const exists =
-        shopping.some(
-
-          shop =>
-
-            shop.name
-              .toLowerCase() ===
-            item.name
-              .toLowerCase() &&
-
-            !shop.completed
-
-        );
-
-
-      if (!exists) {
-
-        shopping.push({
-
-          id:
-            createID(),
-
-          name:
-            item.name,
-
-          completed:
-            false
-
-        });
-
-      }
-
-    }
-  );
-
-
-  save();
-
+  saveData();
 
   renderShopping();
-
-
-  alert(
-    "Low-stock items added to shopping list."
-  );
 
 }
 
@@ -1788,8 +1597,7 @@ function toggleShopping(
     !item.completed;
 
 
-  save();
-
+  saveData();
 
   renderShopping();
 
@@ -1807,10 +1615,64 @@ function removeShopping(
     );
 
 
-  save();
-
+  saveData();
 
   renderShopping();
+
+}
+
+
+function addLowStockToShopping() {
+
+  inventory
+    .filter(
+      item =>
+        Number(item.quantity) <=
+        Number(item.minimum)
+    )
+    .forEach(
+      item => {
+
+        const exists =
+          shopping.some(
+            shop =>
+              shop.name
+                .toLowerCase() ===
+              item.name
+                .toLowerCase() &&
+              !shop.completed
+          );
+
+
+        if (!exists) {
+
+          shopping.push({
+
+            id:
+              createID(),
+
+            name:
+              item.name,
+
+            completed:
+              false
+
+          });
+
+        }
+
+      }
+    );
+
+
+  saveData();
+
+  renderShopping();
+
+
+  alert(
+    "Low-stock items added."
+  );
 
 }
 
@@ -1831,7 +1693,7 @@ function renderShopping() {
 
 
   if (
-    !shopping.length
+    shopping.length === 0
   ) {
 
     list.innerHTML =
@@ -1845,12 +1707,9 @@ function renderShopping() {
   list.innerHTML =
     shopping
       .map(
-
         item => `
 
-          <div
-            class="shopping-item"
-          >
+          <div class="shopping-item">
 
             <input
               type="checkbox"
@@ -1867,23 +1726,17 @@ function renderShopping() {
             >
 
 
-            <div
-              style="
-                flex:1;
+            <div style="flex:1">
 
-                ${
-                  item.completed
-
-                    ? "text-decoration:line-through;color:#888"
-
-                    : ""
-                }
-              "
-            >
-
-              ${escapeHTML(
-                item.name
-              )}
+              ${
+                item.completed
+                  ? `<s>${escapeHTML(
+                      item.name
+                    )}</s>`
+                  : escapeHTML(
+                      item.name
+                    )
+              }
 
             </div>
 
@@ -1894,15 +1747,12 @@ function renderShopping() {
                 '${item.id}'
               )"
             >
-
               ✕
-
             </button>
 
           </div>
 
         `
-
       )
       .join("");
 
@@ -1910,7 +1760,7 @@ function renderShopping() {
 
 
 // ==========================================
-// ACTIVITY LOG
+// ACTIVITY
 // ==========================================
 
 function logActivity(
@@ -1920,14 +1770,11 @@ function logActivity(
   const time =
     new Date()
       .toLocaleTimeString(
-
         [],
-
         {
           hour: "numeric",
           minute: "2-digit"
         }
-
       );
 
 
@@ -1943,44 +1790,31 @@ function logActivity(
   activity =
     activity.slice(
       0,
-      30
+      50
     );
 
 }
 
 
 // ==========================================
-// CREATE ID
+// ID
 // ==========================================
 
 function createID() {
 
-  if (
-    window.crypto &&
-    crypto.randomUUID
-  ) {
-
-    return crypto.randomUUID();
-
-  }
-
-
   return (
-
     Date.now()
       .toString(36) +
-
     Math.random()
       .toString(36)
       .substring(2)
-
   );
 
 }
 
 
 // ==========================================
-// SECURITY
+// ESCAPE HTML
 // ==========================================
 
 function escapeHTML(
@@ -2018,42 +1852,7 @@ function escapeHTML(
 
 
 // ==========================================
-// SERVICE WORKER
-// ==========================================
-
-if (
-  "serviceWorker" in
-  navigator
-) {
-
-  window.addEventListener(
-    "load",
-    () => {
-
-      navigator.serviceWorker
-        .register(
-          "service-worker.js"
-        )
-
-        .catch(
-          error => {
-
-            console.log(
-              "Service worker unavailable:",
-              error
-            );
-
-          }
-        );
-
-    }
-  );
-
-}
-
-
-// ==========================================
-// START APPLICATION
+// START APP
 // ==========================================
 
 document.addEventListener(
