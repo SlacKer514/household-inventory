@@ -2,488 +2,150 @@ const STORAGE_KEY = "kitchenInventoryV1";
 const SHOPPING_KEY = "kitchenShoppingV1";
 const ACTIVITY_KEY = "kitchenActivityV1";
 
+let inventory = JSON.parse(
+  localStorage.getItem(STORAGE_KEY) || "[]"
+);
+
+let shopping = JSON.parse(
+  localStorage.getItem(SHOPPING_KEY) || "[]"
+);
+
+let activity = JSON.parse(
+  localStorage.getItem(ACTIVITY_KEY) || "[]"
+);
+
+let mode = "add";
+
 let html5QrCode = null;
 let scannerRunning = false;
 let lastScannedCode = null;
 let lastScanTime = 0;
 
-let inventory = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-let shopping = JSON.parse(localStorage.getItem(SHOPPING_KEY) || "[]");
-let activity = JSON.parse(localStorage.getItem(ACTIVITY_KEY) || "[]");
 
-let mode = "add";
+// ===============================
+// SAVE DATA
+// ===============================
 
 function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory));
-  localStorage.setItem(SHOPPING_KEY, JSON.stringify(shopping));
-  localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activity));
+
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(inventory)
+  );
+
+  localStorage.setItem(
+    SHOPPING_KEY,
+    JSON.stringify(shopping)
+  );
+
+  localStorage.setItem(
+    ACTIVITY_KEY,
+    JSON.stringify(activity)
+  );
+
 }
+
+
+// ===============================
+// SCREEN NAVIGATION
+// ===============================
 
 function showScreen(id) {
-if (id !== "scan" && scannerRunning) {
-  stopScanner();
-}
-  document.querySelectorAll(".screen").forEach(screen => {
-    screen.classList.remove("active");
-  });
 
-  const screen = document.getElementById(id);
+  if (
+    id !== "scan" &&
+    scannerRunning
+  ) {
+    stopScanner();
+  }
+
+
+  document
+    .querySelectorAll(".screen")
+    .forEach(screen => {
+
+      screen.classList.remove("active");
+
+    });
+
+
+  const screen =
+    document.getElementById(id);
+
 
   if (screen) {
     screen.classList.add("active");
   }
 
-  document.querySelectorAll(".bottom-nav button").forEach(button => {
-    button.classList.toggle(
-      "active",
-      button.dataset.screen === id
-    );
-  });
 
-  if (id === "home") renderHome();
-  if (id === "inventory") renderInventory();
-  if (id === "shopping") renderShopping();
+  document
+    .querySelectorAll(".bottom-nav button")
+    .forEach(button => {
+
+      button.classList.toggle(
+        "active",
+        button.dataset.screen === id
+      );
+
+    });
+
+
+  if (id === "home") {
+    renderHome();
+  }
+
+
+  if (id === "inventory") {
+    renderInventory();
+  }
+
+
+  if (id === "shopping") {
+    renderShopping();
+  }
+
 }
+
+
+// ===============================
+// ADD / REMOVE MODE
+// ===============================
 
 function setMode(newMode) {
+
   mode = newMode;
 
-  const add = document.getElementById("addMode");
-  const remove = document.getElementById("removeMode");
 
-  add.className = newMode === "add" ? "selected-add" : "";
-  remove.className = newMode === "remove" ? "selected-remove" : "";
-}
+  const addButton =
+    document.getElementById("addMode");
 
-function processBarcode() {
-  const input = document.getElementById("barcodeInput");
-  const barcode = input.value.trim();
+  const removeButton =
+    document.getElementById("removeMode");
 
-  if (!barcode) {
-    alert("Please enter or scan a barcode.");
-    return;
+
+  if (newMode === "add") {
+
+    addButton.className =
+      "selected-add";
+
+    removeButton.className = "";
+
   }
 
-  let product = inventory.find(item => item.barcode === barcode);
+  else {
 
-  if (!product) {
-    const name = prompt(
-      "This barcode is not in your inventory.\n\nEnter the product name:"
-    );
+    addButton.className = "";
 
-    if (!name) return;
+    removeButton.className =
+      "selected-remove";
 
-    const category = prompt(
-      "Enter a category:",
-      "Other"
-    ) || "Other";
-
-    const minimum = Number(
-      prompt("Minimum stock level:", "1")
-    ) || 0;
-
-    product = {
-      id: crypto.randomUUID(),
-      barcode,
-      name,
-      category,
-      quantity: 0,
-      minimum
-    };
-
-    inventory.push(product);
   }
 
-  if (mode === "add") {
-    product.quantity += 1;
-    logActivity(`Added ${product.name}`);
-  } else {
-    if (product.quantity > 0) {
-      product.quantity -= 1;
-      logActivity(`Removed ${product.name}`);
-    } else {
-      alert(`${product.name} is already at 0.`);
-    }
-  }
-
-  save();
-
-  input.value = "";
-
-  renderHome();
-  renderInventory();
-
-  alert(
-    `${product.name}\n\nCurrent quantity: ${product.quantity}`
-  );
 }
 
-function openAddProduct() {
-  document.getElementById("newName").value = "";
-  document.getElementById("newBarcode").value = "";
-  document.getElementById("newQuantity").value = 1;
-  document.getElementById("newMinimum").value = 1;
 
-  showScreen("addProduct");
-}
-
-function saveNewProduct() {
-  const name = document.getElementById("newName").value.trim();
-
-  if (!name) {
-    alert("Enter a product name.");
-    return;
-  }
-
-  const barcode = document.getElementById("newBarcode").value.trim();
-  const category = document.getElementById("newCategory").value;
-  const quantity = Number(
-    document.getElementById("newQuantity").value
-  ) || 0;
-
-  const minimum = Number(
-    document.getElementById("newMinimum").value
-  ) || 0;
-
-  const existing = barcode
-    ? inventory.find(item => item.barcode === barcode)
-    : null;
-
-  if (existing) {
-    existing.quantity += quantity;
-    existing.minimum = minimum;
-    logActivity(`Added ${quantity} ${existing.name}`);
-  } else {
-    inventory.push({
-      id: crypto.randomUUID(),
-      barcode,
-      name,
-      category,
-      quantity,
-      minimum
-    });
-
-    logActivity(`Added ${quantity} ${name}`);
-  }
-
-  save();
-
-  alert(`${name} added to inventory.`);
-
-  showScreen("inventory");
-}
-
-function changeQuantity(id, amount) {
-  const product = inventory.find(item => item.id === id);
-
-  if (!product) return;
-
-  product.quantity = Math.max(
-    0,
-    product.quantity + amount
-  );
-
-  logActivity(
-    `${amount > 0 ? "Added" : "Removed"} ${product.name}`
-  );
-
-  save();
-  renderHome();
-  renderInventory();
-}
-
-function deleteProduct(id) {
-  const product = inventory.find(item => item.id === id);
-
-  if (!product) return;
-
-  if (!confirm(`Delete ${product.name} from inventory?`)) {
-    return;
-  }
-
-  inventory = inventory.filter(item => item.id !== id);
-
-  save();
-  renderInventory();
-  renderHome();
-}
-
-function renderHome() {
-  const total = inventory.reduce(
-    (sum, item) => sum + item.quantity,
-    0
-  );
-
-  const low = inventory.filter(
-    item => item.quantity <= item.minimum
-  ).length;
-
-  document.getElementById("totalItems").textContent = total;
-  document.getElementById("lowItems").textContent = low;
-
-  const recent = document.getElementById("recentActivity");
-
-  if (!activity.length) {
-    recent.innerHTML =
-      `<div class="empty">No activity yet.</div>`;
-    return;
-  }
-
-  recent.innerHTML = activity
-    .slice(0, 8)
-    .map(item => `<p>${escapeHTML(item)}</p>`)
-    .join("");
-}
-
-function renderInventory() {
-  const list = document.getElementById("inventoryList");
-  const search = (
-    document.getElementById("searchInput")?.value || ""
-  ).toLowerCase();
-
-  const category =
-    document.getElementById("categoryFilter")?.value || "all";
-
-  updateCategoryFilter();
-
-  const filtered = inventory.filter(item => {
-    const matchesSearch =
-      item.name.toLowerCase().includes(search);
-
-    const matchesCategory =
-      category === "all" ||
-      item.category === category;
-
-    return matchesSearch && matchesCategory;
-  });
-
-  if (!filtered.length) {
-    list.innerHTML =
-      `<div class="empty">No products found.</div>`;
-    return;
-  }
-
-  list.innerHTML = filtered.map(item => {
-
-    const isLow =
-      item.quantity <= item.minimum;
-
-    return `
-      <div class="product">
-
-        <div style="flex:1">
-          <div class="product-name">
-            ${escapeHTML(item.name)}
-          </div>
-
-          <div class="product-meta">
-            ${escapeHTML(item.category)}
-            ${isLow ? ' • <span class="low">LOW</span>' : ''}
-          </div>
-        </div>
-
-        <div class="qty-buttons">
-
-          <button
-            class="secondary"
-            onclick="changeQuantity('${item.id}', -1)">
-            −
-          </button>
-
-          <div class="quantity">
-            ${item.quantity}
-          </div>
-
-          <button
-            class="primary"
-            onclick="changeQuantity('${item.id}', 1)">
-            +
-          </button>
-
-          <button
-            class="secondary"
-            onclick="deleteProduct('${item.id}')">
-            🗑
-          </button>
-
-        </div>
-
-      </div>
-    `;
-  }).join("");
-}
-
-function updateCategoryFilter() {
-  const select =
-    document.getElementById("categoryFilter");
-
-  const current = select.value;
-
-  const categories = [
-    ...new Set(
-      inventory.map(item => item.category)
-    )
-  ].sort();
-
-  select.innerHTML =
-    `<option value="all">All Categories</option>` +
-    categories
-      .map(
-        category =>
-          `<option value="${escapeHTML(category)}">
-            ${escapeHTML(category)}
-          </option>`
-      )
-      .join("");
-
-  if (
-    categories.includes(current)
-  ) {
-    select.value = current;
-  }
-}
-
-function addShoppingItem() {
-  const input =
-    document.getElementById("shoppingInput");
-
-  const name = input.value.trim();
-
-  if (!name) return;
-
-  shopping.push({
-    id: crypto.randomUUID(),
-    name,
-    completed: false
-  });
-
-  input.value = "";
-
-  save();
-  renderShopping();
-}
-
-function addLowStockToShopping() {
-  const lowStock = inventory.filter(
-    item => item.quantity <= item.minimum
-  );
-
-  lowStock.forEach(item => {
-
-    const exists = shopping.some(
-      shop =>
-        shop.name.toLowerCase() ===
-        item.name.toLowerCase() &&
-        !shop.completed
-    );
-
-    if (!exists) {
-      shopping.push({
-        id: crypto.randomUUID(),
-        name: item.name,
-        completed: false
-      });
-    }
-  });
-
-  save();
-  renderShopping();
-
-  alert("Low-stock items added to shopping list.");
-}
-
-function toggleShopping(id) {
-  const item =
-    shopping.find(item => item.id === id);
-
-  if (!item) return;
-
-  item.completed = !item.completed;
-
-  save();
-  renderShopping();
-}
-
-function removeShopping(id) {
-  shopping =
-    shopping.filter(item => item.id !== id);
-
-  save();
-  renderShopping();
-}
-
-function renderShopping() {
-  const list =
-    document.getElementById("shoppingList");
-
-  if (!shopping.length) {
-    list.innerHTML =
-      `<div class="empty">Shopping list is empty.</div>`;
-    return;
-  }
-
-  list.innerHTML = shopping.map(item => `
-    <div class="shopping-item">
-
-      <input
-        type="checkbox"
-        ${item.completed ? "checked" : ""}
-        onchange="toggleShopping('${item.id}')"
-      >
-
-      <div style="flex:1;
-        ${item.completed
-          ? "text-decoration:line-through;color:#888"
-          : ""}">
-        ${escapeHTML(item.name)}
-      </div>
-
-      <button
-        class="secondary"
-        onclick="removeShopping('${item.id}')">
-        ✕
-      </button>
-
-    </div>
-  `).join("");
-}
-
-function logActivity(message) {
-  const time =
-    new Date().toLocaleTimeString([], {
-      hour: "numeric",
-      minute: "2-digit"
-    });
-
-  activity.unshift(`${time} — ${message}`);
-
-  activity =
-    activity.slice(0, 30);
-}
-
-function escapeHTML(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register(
-      "service-worker.js"
-    ).catch(error => {
-      console.log(
-        "Service worker registration failed:",
-        error
-      );
-    });
-  });
-}
 // ===============================
-// CAMERA BARCODE SCANNER
+// CAMERA SCANNER
 // ===============================
 
 function startScanner() {
@@ -492,16 +154,53 @@ function startScanner() {
     return;
   }
 
+
+  if (
+    typeof Html5Qrcode ===
+    "undefined"
+  ) {
+
+    alert(
+      "The barcode scanner library did not load. " +
+      "Please refresh the page and try again."
+    );
+
+    return;
+
+  }
+
+
+  const reader =
+    document.getElementById("reader");
+
+
+  if (!reader) {
+
+    alert(
+      "Scanner area could not be found."
+    );
+
+    return;
+
+  }
+
+
   const status =
-    document.getElementById("scanStatus");
+    document.getElementById(
+      "scanStatus"
+    );
+
 
   status.textContent =
     "Starting camera...";
 
+
   html5QrCode =
     new Html5Qrcode("reader");
 
+
   const config = {
+
     fps: 10,
 
     qrbox: {
@@ -510,9 +209,12 @@ function startScanner() {
     },
 
     aspectRatio: 1.777778
+
   };
 
+
   html5QrCode.start(
+
     {
       facingMode: "environment"
     },
@@ -521,15 +223,19 @@ function startScanner() {
 
     function(decodedText) {
 
-      handleBarcodeScan(decodedText);
+      handleBarcodeScan(
+        decodedText
+      );
 
     },
 
     function(errorMessage) {
 
-      // This fires frequently while the scanner
-      // is looking for a barcode.
-      // We intentionally do nothing here.
+      // Normal scanning attempts
+      // produce errors while looking
+      // for a barcode.
+      //
+      // We intentionally ignore them.
 
     }
 
@@ -539,29 +245,43 @@ function startScanner() {
 
     scannerRunning = true;
 
+
     document
-      .getElementById("startScannerButton")
+      .getElementById(
+        "startScannerButton"
+      )
       .classList.add("hidden");
 
+
     document
-      .getElementById("stopScannerButton")
+      .getElementById(
+        "stopScannerButton"
+      )
       .classList.remove("hidden");
 
+
     status.textContent =
-      "Point the camera at a grocery barcode.";
+      "Point your camera at a grocery barcode.";
 
   })
 
+
   .catch(function(error) {
 
-    console.error(error);
+    console.error(
+      "Camera error:",
+      error
+    );
+
 
     status.textContent =
-      "Camera could not start. Please allow camera access.";
+      "Camera could not start.";
+
 
     alert(
-      "The camera could not be started. " +
-      "Make sure your browser has permission to use the camera."
+      "The camera could not be started.\n\n" +
+      "Make sure you allowed camera access " +
+      "when your phone asked."
     );
 
   });
@@ -569,67 +289,97 @@ function startScanner() {
 }
 
 
+// ===============================
+// BARCODE DETECTED
+// ===============================
 
-function handleBarcodeScan(barcode) {
+function handleBarcodeScan(
+  barcode
+) {
 
-  const now = Date.now();
+  const now =
+    Date.now();
 
-  // Prevent the same barcode from being
-  // scanned repeatedly while it remains
-  // in front of the camera.
 
   if (
-    barcode === lastScannedCode &&
-    now - lastScanTime < 2000
+
+    barcode ===
+      lastScannedCode &&
+
+    now -
+      lastScanTime <
+      2000
+
   ) {
 
     return;
 
   }
 
-  lastScannedCode = barcode;
-  lastScanTime = now;
+
+  lastScannedCode =
+    barcode;
+
+  lastScanTime =
+    now;
+
 
   const status =
-    document.getElementById("scanStatus");
+    document.getElementById(
+      "scanStatus"
+    );
+
 
   status.textContent =
-    "Barcode found: " + barcode;
+    "Barcode found: " +
+    barcode;
 
-  processScannedBarcode(barcode);
+
+  processScannedBarcode(
+    barcode
+  );
 
 }
 
 
+// ===============================
+// PROCESS SCANNED PRODUCT
+// ===============================
 
-function processScannedBarcode(barcode) {
+function processScannedBarcode(
+  barcode
+) {
 
   let product =
     inventory.find(
-      item => item.barcode === barcode
+      item =>
+        item.barcode ===
+        barcode
     );
 
 
-  // ===============================
+  // =============================
   // NEW PRODUCT
-  // ===============================
+  // =============================
 
   if (!product) {
 
     stopScanner();
 
+
     const name =
       prompt(
+
         "New barcode found:\n\n" +
+
         barcode +
-        "\n\n" +
-        "What is the product name?"
+
+        "\n\nWhat is the product name?"
+
       );
 
 
     if (!name) {
-
-      startScanner();
 
       return;
 
@@ -638,17 +388,25 @@ function processScannedBarcode(barcode) {
 
     const category =
       prompt(
+
         "What category is this product?",
+
         "Other"
+
       ) || "Other";
 
 
     const minimum =
       Number(
+
         prompt(
-          "What is the minimum stock level?",
+
+          "Minimum stock level?",
+
           "1"
+
         )
+
       ) || 0;
 
 
@@ -664,7 +422,7 @@ function processScannedBarcode(barcode) {
         name.trim(),
 
       category:
-        category,
+        category.trim(),
 
       quantity:
         0,
@@ -675,38 +433,50 @@ function processScannedBarcode(barcode) {
     };
 
 
-    inventory.push(product);
-
-  }
-
-
-  // ===============================
-  // ADD
-  // ===============================
-
-  if (mode === "add") {
-
-    product.quantity++;
-
-    logActivity(
-      "Added " + product.name
+    inventory.push(
+      product
     );
 
   }
 
 
-  // ===============================
+  // =============================
+  // ADD
+  // =============================
+
+  if (mode === "add") {
+
+    product.quantity += 1;
+
+
+    logActivity(
+
+      "Added " +
+      product.name
+
+    );
+
+  }
+
+
+  // =============================
   // REMOVE
-  // ===============================
+  // =============================
 
   else {
 
-    if (product.quantity > 0) {
+    if (
+      product.quantity > 0
+    ) {
 
-      product.quantity--;
+      product.quantity -= 1;
+
 
       logActivity(
-        "Removed " + product.name
+
+        "Removed " +
+        product.name
+
       );
 
     }
@@ -714,8 +484,10 @@ function processScannedBarcode(barcode) {
     else {
 
       alert(
+
         product.name +
         " is already at 0."
+
       );
 
     }
@@ -731,17 +503,32 @@ function processScannedBarcode(barcode) {
   renderInventory();
 
 
-  document.getElementById(
-    "scanStatus"
-  ).textContent =
-    product.name +
-    ": " +
-    product.quantity +
-    " in stock";
+  const status =
+    document.getElementById(
+      "scanStatus"
+    );
+
+
+  if (status) {
+
+    status.textContent =
+
+      product.name +
+
+      ": " +
+
+      product.quantity +
+
+      " in stock";
+
+  }
 
 }
 
 
+// ===============================
+// STOP CAMERA
+// ===============================
 
 function stopScanner() {
 
@@ -756,35 +543,63 @@ function stopScanner() {
 
 
   html5QrCode
+
     .stop()
 
     .then(function() {
 
       html5QrCode.clear();
 
-      scannerRunning = false;
+
+      scannerRunning =
+        false;
 
 
-      document
-        .getElementById(
+      const startButton =
+        document.getElementById(
           "startScannerButton"
-        )
-        .classList.remove("hidden");
+        );
 
 
-      document
-        .getElementById(
+      const stopButton =
+        document.getElementById(
           "stopScannerButton"
-        )
-        .classList.add("hidden");
+        );
 
 
-      document.getElementById(
-        "scanStatus"
-      ).textContent =
-        "Camera is off.";
+      if (startButton) {
+
+        startButton
+          .classList
+          .remove("hidden");
+
+      }
+
+
+      if (stopButton) {
+
+        stopButton
+          .classList
+          .add("hidden");
+
+      }
+
+
+      const status =
+        document.getElementById(
+          "scanStatus"
+        );
+
+
+      if (status) {
+
+        status.textContent =
+          "Camera is off.";
+
+      }
 
     })
+
 
     .catch(function(error) {
 
@@ -796,3 +611,963 @@ function stopScanner() {
     });
 
 }
+
+
+// ===============================
+// MANUAL BARCODE
+// ===============================
+
+function processBarcode() {
+
+  const input =
+    document.getElementById(
+      "barcodeInput"
+    );
+
+
+  const barcode =
+    input.value.trim();
+
+
+  if (!barcode) {
+
+    alert(
+      "Please enter a barcode."
+    );
+
+    return;
+
+  }
+
+
+  processScannedBarcode(
+    barcode
+  );
+
+
+  input.value = "";
+
+}
+
+
+// ===============================
+// QUICK ADD PRODUCT
+// ===============================
+
+function openAddProduct() {
+
+  document.getElementById(
+    "newName"
+  ).value = "";
+
+
+  document.getElementById(
+    "newBarcode"
+  ).value = "";
+
+
+  document.getElementById(
+    "newQuantity"
+  ).value = 1;
+
+
+  document.getElementById(
+    "newMinimum"
+  ).value = 1;
+
+
+  showScreen(
+    "addProduct"
+  );
+
+}
+
+
+// ===============================
+// SAVE NEW PRODUCT
+// ===============================
+
+function saveNewProduct() {
+
+  const name =
+    document.getElementById(
+      "newName"
+    ).value.trim();
+
+
+  if (!name) {
+
+    alert(
+      "Enter a product name."
+    );
+
+    return;
+
+  }
+
+
+  const barcode =
+    document.getElementById(
+      "newBarcode"
+    ).value.trim();
+
+
+  const category =
+    document.getElementById(
+      "newCategory"
+    ).value;
+
+
+  const quantity =
+    Number(
+
+      document.getElementById(
+        "newQuantity"
+      ).value
+
+    ) || 0;
+
+
+  const minimum =
+    Number(
+
+      document.getElementById(
+        "newMinimum"
+      ).value
+
+    ) || 0;
+
+
+  const existing =
+    barcode
+
+      ? inventory.find(
+          item =>
+            item.barcode ===
+            barcode
+        )
+
+      : null;
+
+
+  if (existing) {
+
+    existing.quantity +=
+      quantity;
+
+    existing.minimum =
+      minimum;
+
+
+    logActivity(
+
+      "Added " +
+      quantity +
+      " " +
+      existing.name
+
+    );
+
+  }
+
+  else {
+
+    inventory.push({
+
+      id:
+        crypto.randomUUID(),
+
+      barcode:
+        barcode,
+
+      name:
+        name,
+
+      category:
+        category,
+
+      quantity:
+        quantity,
+
+      minimum:
+        minimum
+
+    });
+
+
+    logActivity(
+
+      "Added " +
+      quantity +
+      " " +
+      name
+
+    );
+
+  }
+
+
+  save();
+
+
+  showScreen(
+    "inventory"
+  );
+
+}
+
+
+// ===============================
+// CHANGE QUANTITY
+// ===============================
+
+function changeQuantity(
+  id,
+  amount
+) {
+
+  const product =
+    inventory.find(
+      item =>
+        item.id === id
+    );
+
+
+  if (!product) {
+    return;
+  }
+
+
+  product.quantity =
+    Math.max(
+
+      0,
+
+      product.quantity +
+      amount
+
+    );
+
+
+  logActivity(
+
+    amount > 0
+
+      ? "Added " +
+        product.name
+
+      : "Removed " +
+        product.name
+
+  );
+
+
+  save();
+
+
+  renderHome();
+
+  renderInventory();
+
+}
+
+
+// ===============================
+// DELETE PRODUCT
+// ===============================
+
+function deleteProduct(id) {
+
+  const product =
+    inventory.find(
+      item =>
+        item.id === id
+    );
+
+
+  if (!product) {
+    return;
+  }
+
+
+  if (
+    !confirm(
+      "Delete " +
+      product.name +
+      " from inventory?"
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  inventory =
+    inventory.filter(
+      item =>
+        item.id !== id
+    );
+
+
+  save();
+
+
+  renderInventory();
+
+  renderHome();
+
+}
+
+
+// ===============================
+// HOME
+// ===============================
+
+function renderHome() {
+
+  const total =
+    inventory.reduce(
+
+      (sum, item) =>
+        sum + item.quantity,
+
+      0
+
+    );
+
+
+  const low =
+    inventory.filter(
+
+      item =>
+        item.quantity <=
+        item.minimum
+
+    ).length;
+
+
+  document.getElementById(
+    "totalItems"
+  ).textContent =
+    total;
+
+
+  document.getElementById(
+    "lowItems"
+  ).textContent =
+    low;
+
+
+  const recent =
+    document.getElementById(
+      "recentActivity"
+    );
+
+
+  if (
+    !activity.length
+  ) {
+
+    recent.innerHTML =
+      '<div class="empty">No activity yet.</div>';
+
+    return;
+
+  }
+
+
+  recent.innerHTML =
+    activity
+      .slice(0, 8)
+      .map(
+        item =>
+          `<p>${escapeHTML(item)}</p>`
+      )
+      .join("");
+
+}
+
+
+// ===============================
+// INVENTORY
+// ===============================
+
+function renderInventory() {
+
+  const list =
+    document.getElementById(
+      "inventoryList"
+    );
+
+
+  const search =
+    (
+      document.getElementById(
+        "searchInput"
+      )?.value || ""
+    ).toLowerCase();
+
+
+  const category =
+    document.getElementById(
+      "categoryFilter"
+    )?.value || "all";
+
+
+  updateCategoryFilter();
+
+
+  const filtered =
+    inventory.filter(item => {
+
+      const matchesSearch =
+
+        item.name
+          .toLowerCase()
+          .includes(search);
+
+
+      const matchesCategory =
+
+        category === "all" ||
+
+        item.category ===
+          category;
+
+
+      return (
+        matchesSearch &&
+        matchesCategory
+      );
+
+    });
+
+
+  if (
+    !filtered.length
+  ) {
+
+    list.innerHTML =
+      '<div class="empty">No products found.</div>';
+
+    return;
+
+  }
+
+
+  list.innerHTML =
+    filtered
+      .map(item => {
+
+        const isLow =
+          item.quantity <=
+          item.minimum;
+
+
+        return `
+
+          <div class="product">
+
+            <div style="flex:1">
+
+              <div class="product-name">
+
+                ${escapeHTML(
+                  item.name
+                )}
+
+              </div>
+
+              <div class="product-meta">
+
+                ${escapeHTML(
+                  item.category
+                )}
+
+                ${
+                  isLow
+                    ? ' • <span class="low">LOW</span>'
+                    : ''
+                }
+
+              </div>
+
+            </div>
+
+
+            <div class="qty-buttons">
+
+              <button
+                class="secondary"
+                onclick="changeQuantity(
+                  '${item.id}',
+                  -1
+                )"
+              >
+                −
+              </button>
+
+
+              <div class="quantity">
+
+                ${item.quantity}
+
+              </div>
+
+
+              <button
+                class="primary"
+                onclick="changeQuantity(
+                  '${item.id}',
+                  1
+                )"
+              >
+                +
+              </button>
+
+
+              <button
+                class="secondary"
+                onclick="deleteProduct(
+                  '${item.id}'
+                )"
+              >
+                🗑
+              </button>
+
+            </div>
+
+          </div>
+
+        `;
+
+      })
+      .join("");
+
+}
+
+
+// ===============================
+// CATEGORY FILTER
+// ===============================
+
+function updateCategoryFilter() {
+
+  const select =
+    document.getElementById(
+      "categoryFilter"
+    );
+
+
+  if (!select) {
+    return;
+  }
+
+
+  const current =
+    select.value;
+
+
+  const categories =
+    [
+      ...new Set(
+
+        inventory.map(
+          item =>
+            item.category
+        )
+
+      )
+
+    ].sort();
+
+
+  select.innerHTML =
+
+    '<option value="all">' +
+    'All Categories' +
+    '</option>' +
+
+    categories
+      .map(
+
+        category =>
+
+          `<option value="${escapeHTML(
+            category
+          )}">
+
+            ${escapeHTML(
+              category
+            )}
+
+          </option>`
+
+      )
+      .join("");
+
+
+  if (
+    categories.includes(
+      current
+    )
+  ) {
+
+    select.value =
+      current;
+
+  }
+
+}
+
+
+// ===============================
+// SHOPPING LIST
+// ===============================
+
+function addShoppingItem() {
+
+  const input =
+    document.getElementById(
+      "shoppingInput"
+    );
+
+
+  const name =
+    input.value.trim();
+
+
+  if (!name) {
+    return;
+  }
+
+
+  shopping.push({
+
+    id:
+      crypto.randomUUID(),
+
+    name:
+      name,
+
+    completed:
+      false
+
+  });
+
+
+  input.value = "";
+
+
+  save();
+
+
+  renderShopping();
+
+}
+
+
+function addLowStockToShopping() {
+
+  const lowStock =
+    inventory.filter(
+
+      item =>
+        item.quantity <=
+        item.minimum
+
+    );
+
+
+  lowStock.forEach(item => {
+
+    const exists =
+      shopping.some(
+
+        shop =>
+
+          shop.name
+            .toLowerCase() ===
+          item.name
+            .toLowerCase() &&
+
+          !shop.completed
+
+      );
+
+
+    if (!exists) {
+
+      shopping.push({
+
+        id:
+          crypto.randomUUID(),
+
+        name:
+          item.name,
+
+        completed:
+          false
+
+      });
+
+    }
+
+  });
+
+
+  save();
+
+
+  renderShopping();
+
+
+  alert(
+    "Low-stock items added to shopping list."
+  );
+
+}
+
+
+function toggleShopping(id) {
+
+  const item =
+    shopping.find(
+      item =>
+        item.id === id
+    );
+
+
+  if (!item) {
+    return;
+  }
+
+
+  item.completed =
+    !item.completed;
+
+
+  save();
+
+
+  renderShopping();
+
+}
+
+
+function removeShopping(id) {
+
+  shopping =
+    shopping.filter(
+      item =>
+        item.id !== id
+    );
+
+
+  save();
+
+
+  renderShopping();
+
+}
+
+
+function renderShopping() {
+
+  const list =
+    document.getElementById(
+      "shoppingList"
+    );
+
+
+  if (
+    !shopping.length
+  ) {
+
+    list.innerHTML =
+      '<div class="empty">Shopping list is empty.</div>';
+
+    return;
+
+  }
+
+
+  list.innerHTML =
+    shopping
+      .map(
+
+        item => `
+
+          <div class="shopping-item">
+
+            <input
+              type="checkbox"
+
+              ${
+                item.completed
+                  ? "checked"
+                  : ""
+              }
+
+              onchange="toggleShopping(
+                '${item.id}'
+              )"
+            >
+
+
+            <div
+              style="
+                flex:1;
+                ${
+                  item.completed
+                    ? "text-decoration:line-through;color:#888"
+                    : ""
+                }
+              "
+            >
+
+              ${escapeHTML(
+                item.name
+              )}
+
+            </div>
+
+
+            <button
+              class="secondary"
+              onclick="removeShopping(
+                '${item.id}'
+              )"
+            >
+              ✕
+            </button>
+
+          </div>
+
+        `
+
+      )
+      .join("");
+
+}
+
+
+// ===============================
+// ACTIVITY
+// ===============================
+
+function logActivity(
+  message
+) {
+
+  const time =
+    new Date()
+      .toLocaleTimeString(
+        [],
+        {
+          hour: "numeric",
+          minute: "2-digit"
+        }
+      );
+
+
+  activity.unshift(
+
+    time +
+    " — " +
+    message
+
+  );
+
+
+  activity =
+    activity.slice(
+      0,
+      30
+    );
+
+}
+
+
+// ===============================
+// SECURITY
+// ===============================
+
+function escapeHTML(
+  value
+) {
+
+  return String(value)
+
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
+
+}
+
+
+// ===============================
+// SERVICE WORKER
+// ===============================
+
+if (
+  "serviceWorker" in navigator
+) {
+
+  window.addEventListener(
+    "load",
+    () => {
+
+      navigator.serviceWorker
+        .register(
+          "service-worker.js"
+        )
+
+        .catch(
+          error => {
+
+            console.log(
+              "Service worker registration failed:",
+              error
+            );
+
+          }
+        );
+
+    }
+  );
+
+}
+
+
+// ===============================
+// START APP
+// ===============================
+
+renderHome();
+
+renderInventory();
+
+renderShopping();
