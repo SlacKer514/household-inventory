@@ -2,6 +2,11 @@ const STORAGE_KEY = "kitchenInventoryV1";
 const SHOPPING_KEY = "kitchenShoppingV1";
 const ACTIVITY_KEY = "kitchenActivityV1";
 
+let html5QrCode = null;
+let scannerRunning = false;
+let lastScannedCode = null;
+let lastScanTime = 0;
+
 let inventory = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let shopping = JSON.parse(localStorage.getItem(SHOPPING_KEY) || "[]");
 let activity = JSON.parse(localStorage.getItem(ACTIVITY_KEY) || "[]");
@@ -474,10 +479,317 @@ if ("serviceWorker" in navigator) {
     });
   });
 }
-const STORAGE_KEY = "kitchenInventoryV1";
-const SHOPPING_KEY = "kitchenShoppingV1";
-const ACTIVITY_KEY = "kitchenActivityV1";
+// ===============================
+// CAMERA BARCODE SCANNER
+// ===============================
 
-renderHome();
-renderInventory();
-renderShopping();
+function startScanner() {
+
+  if (scannerRunning) {
+    return;
+  }
+
+  const status =
+    document.getElementById("scanStatus");
+
+  status.textContent =
+    "Starting camera...";
+
+  html5QrCode =
+    new Html5Qrcode("reader");
+
+  const config = {
+    fps: 10,
+
+    qrbox: {
+      width: 280,
+      height: 140
+    },
+
+    aspectRatio: 1.777778
+  };
+
+  html5QrCode.start(
+    {
+      facingMode: "environment"
+    },
+
+    config,
+
+    function(decodedText) {
+
+      handleBarcodeScan(decodedText);
+
+    },
+
+    function(errorMessage) {
+
+      // This fires frequently while the scanner
+      // is looking for a barcode.
+      // We intentionally do nothing here.
+
+    }
+
+  )
+
+  .then(function() {
+
+    scannerRunning = true;
+
+    document
+      .getElementById("startScannerButton")
+      .classList.add("hidden");
+
+    document
+      .getElementById("stopScannerButton")
+      .classList.remove("hidden");
+
+    status.textContent =
+      "Point the camera at a grocery barcode.";
+
+  })
+
+  .catch(function(error) {
+
+    console.error(error);
+
+    status.textContent =
+      "Camera could not start. Please allow camera access.";
+
+    alert(
+      "The camera could not be started. " +
+      "Make sure your browser has permission to use the camera."
+    );
+
+  });
+
+}
+
+
+
+function handleBarcodeScan(barcode) {
+
+  const now = Date.now();
+
+  // Prevent the same barcode from being
+  // scanned repeatedly while it remains
+  // in front of the camera.
+
+  if (
+    barcode === lastScannedCode &&
+    now - lastScanTime < 2000
+  ) {
+
+    return;
+
+  }
+
+  lastScannedCode = barcode;
+  lastScanTime = now;
+
+  const status =
+    document.getElementById("scanStatus");
+
+  status.textContent =
+    "Barcode found: " + barcode;
+
+  processScannedBarcode(barcode);
+
+}
+
+
+
+function processScannedBarcode(barcode) {
+
+  let product =
+    inventory.find(
+      item => item.barcode === barcode
+    );
+
+
+  // ===============================
+  // NEW PRODUCT
+  // ===============================
+
+  if (!product) {
+
+    stopScanner();
+
+    const name =
+      prompt(
+        "New barcode found:\n\n" +
+        barcode +
+        "\n\n" +
+        "What is the product name?"
+      );
+
+
+    if (!name) {
+
+      startScanner();
+
+      return;
+
+    }
+
+
+    const category =
+      prompt(
+        "What category is this product?",
+        "Other"
+      ) || "Other";
+
+
+    const minimum =
+      Number(
+        prompt(
+          "What is the minimum stock level?",
+          "1"
+        )
+      ) || 0;
+
+
+    product = {
+
+      id:
+        crypto.randomUUID(),
+
+      barcode:
+        barcode,
+
+      name:
+        name.trim(),
+
+      category:
+        category,
+
+      quantity:
+        0,
+
+      minimum:
+        minimum
+
+    };
+
+
+    inventory.push(product);
+
+  }
+
+
+  // ===============================
+  // ADD
+  // ===============================
+
+  if (mode === "add") {
+
+    product.quantity++;
+
+    logActivity(
+      "Added " + product.name
+    );
+
+  }
+
+
+  // ===============================
+  // REMOVE
+  // ===============================
+
+  else {
+
+    if (product.quantity > 0) {
+
+      product.quantity--;
+
+      logActivity(
+        "Removed " + product.name
+      );
+
+    }
+
+    else {
+
+      alert(
+        product.name +
+        " is already at 0."
+      );
+
+    }
+
+  }
+
+
+  save();
+
+
+  renderHome();
+
+  renderInventory();
+
+
+  document.getElementById(
+    "scanStatus"
+  ).textContent =
+    product.name +
+    ": " +
+    product.quantity +
+    " in stock";
+
+}
+
+
+
+function stopScanner() {
+
+  if (
+    !html5QrCode ||
+    !scannerRunning
+  ) {
+
+    return;
+
+  }
+
+
+  html5QrCode
+    .stop()
+
+    .then(function() {
+
+      html5QrCode.clear();
+
+      scannerRunning = false;
+
+
+      document
+        .getElementById(
+          "startScannerButton"
+        )
+        .classList.remove("hidden");
+
+
+      document
+        .getElementById(
+          "stopScannerButton"
+        )
+        .classList.add("hidden");
+
+
+      document.getElementById(
+        "scanStatus"
+      ).textContent =
+        "Camera is off.";
+
+    })
+
+    .catch(function(error) {
+
+      console.error(
+        "Error stopping scanner:",
+        error
+      );
+
+    });
+
+}
