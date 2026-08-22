@@ -474,6 +474,9 @@ if ("serviceWorker" in navigator) {
     });
   });
 }
+const STORAGE_KEY = "kitchenInventoryV1";
+const SHOPPING_KEY = "kitchenShoppingV1";
+const ACTIVITY_KEY = "kitchenActivityV1";
 
 renderHome();
 renderInventory();
